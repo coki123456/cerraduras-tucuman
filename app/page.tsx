@@ -26,7 +26,8 @@ export default async function PaginaInicio() {
       .single();
 
     // Admin y empleados van directo a su panel
-    if (perfil?.role === "admin" || perfil?.role === "empleado") {
+    // @ts-ignore -- supabase-js infers perfil as never in some versions
+    if ((perfil as any)?.role === "admin" || (perfil as any)?.role === "empleado") {
       redirect("/dashboard");
     }
   }

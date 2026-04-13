@@ -47,7 +47,8 @@ export function FormularioLogin() {
       .eq("id", data.user.id)
       .single();
 
-    const rol = perfil?.role;
+    // @ts-ignore -- supabase-js infers perfil as never
+    const rol = (perfil as any)?.role;
     if (rol === "admin" || rol === "empleado") {
       router.push("/dashboard");
     } else {

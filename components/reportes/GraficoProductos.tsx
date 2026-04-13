@@ -73,7 +73,7 @@ export function GraficoProductos({ datos }: GraficoProductosProps) {
             borderRadius: "8px",
             fontSize: "12px",
           }}
-          formatter={(value: number) => [value, "Unidades vendidas"]}
+          formatter={(value: any) => [value, "Unidades vendidas"]}
           labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
         />
         <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>

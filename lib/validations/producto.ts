@@ -7,19 +7,19 @@ export const schemaProducto = z.object({
     .max(100, "El nombre no puede superar 100 caracteres"),
   descripcion: z.string().max(500, "Máximo 500 caracteres").optional(),
   precio: z
-    .number({ invalid_type_error: "Ingresá un precio válido" })
+    .number({ message: "Ingresá un precio válido" })
     .positive("El precio debe ser mayor a 0"),
   stock: z
-    .number({ invalid_type_error: "Ingresá una cantidad válida" })
+    .number({ message: "Ingresá una cantidad válida" })
     .int("El stock debe ser un número entero")
     .min(0, "El stock no puede ser negativo"),
   stock_minimo: z
-    .number({ invalid_type_error: "Ingresá un mínimo válido" })
+    .number({ message: "Ingresá un mínimo válido" })
     .int()
     .min(0, "El mínimo no puede ser negativo")
     .default(5),
   categoria: z.enum(["cerraduras", "herrajes", "accesorios"], {
-    errorMap: () => ({ message: "Seleccioná una categoría válida" }),
+    message: "Seleccioná una categoría válida",
   }),
   sku: z
     .string()

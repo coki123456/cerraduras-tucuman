@@ -54,7 +54,7 @@ export function GraficoVentas({ datos }: GraficoVentasProps) {
             borderRadius: "8px",
             fontSize: "12px",
           }}
-          formatter={(value: number) => [formatARS(value), "Total"]}
+          formatter={(value: any) => [formatARS(Number(value) || 0), "Total"]}
           labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
         />
         <Line

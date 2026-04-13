@@ -77,9 +77,7 @@ export function TarjetaProducto({ producto }: TarjetaProductoProps) {
               >
                 <Link href="/login">
                   <LogIn className="h-4 w-4" />
-                  {producto.stock === 0
-                    ? "Sin stock"
-                    : "Iniciá sesión para comprar"}
+                  {producto.stock === 0 ? "Sin stock" : "Inicia sesión para comprar"}
                 </Link>
               </Button>
             )}

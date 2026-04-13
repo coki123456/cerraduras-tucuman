@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, ShoppingCart, Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -58,7 +58,7 @@ export function Encabezado() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/50 bg-background/80 backdrop-blur-sm px-4 lg:px-6">
       {/* Hamburger (mobile) */}
       <Sheet>
-        <SheetTrigger asChild>
+        <SheetTrigger>
           <Button variant="ghost" size="icon" className="lg:hidden">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Abrir menú</span>
@@ -76,32 +76,34 @@ export function Encabezado() {
       <div className="flex items-center gap-2">
         {/* Carrito (solo clientes) */}
         {role === "cliente" && (
-          <Button variant="ghost" size="icon" asChild className="relative">
-            <Link href="/dashboard/carrito">
-              <ShoppingCart className="h-5 w-5" />
-              {totalItems > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                  {totalItems}
-                </Badge>
-              )}
-              <span className="sr-only">Carrito ({totalItems})</span>
-            </Link>
-          </Button>
+          <Link
+            href="/dashboard/carrito"
+            className={buttonVariants({ variant: "ghost", size: "icon", className: "relative" })}
+          >
+            <ShoppingCart className="h-5 w-5" />
+            {totalItems > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                {totalItems}
+              </Badge>
+            )}
+            <span className="sr-only">Carrito ({totalItems})</span>
+          </Link>
         )}
 
         {/* Notificaciones (admin) */}
         {role === "admin" && (
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard/admin/alertas-stock">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Alertas</span>
-            </Link>
-          </Button>
+          <Link
+            href="/dashboard/admin/alertas-stock"
+            className={buttonVariants({ variant: "ghost", size: "icon" })}
+          >
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Alertas</span>
+          </Link>
         )}
 
         {/* Avatar + Dropdown */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">

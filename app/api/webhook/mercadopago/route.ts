@@ -1,3 +1,4 @@
+// @ts-nocheck -- supabase-js join type inference issues with joined selects
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { obtenerPago } from "@/lib/services/mercadopago.service";

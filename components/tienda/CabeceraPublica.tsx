@@ -14,31 +14,16 @@ export function CabeceraPublica() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto max-w-6xl px-4 h-16 flex items-center justify-between gap-4">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Cerraduras Tucumán"
-            width={36}
-            height={36}
-            className="rounded-lg"
-          />
-          <span className="font-bold text-base hidden sm:block">
-            Cerraduras Tucumán
-          </span>
+          <Image src="/logo.png" alt="Cerraduras Tucumán" width={36} height={36} className="rounded-lg" />
+          <span className="font-bold text-base hidden sm:block">Cerraduras Tucumán</span>
         </Link>
 
-        {/* Acciones según estado de sesión */}
         {!cargando && (
           <div className="flex items-center gap-2">
             {role === "cliente" && (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="relative gap-2"
-                >
+                <Button variant="ghost" size="sm" asChild className="relative gap-2">
                   <Link href="/dashboard/carrito">
                     <ShoppingCart className="h-4 w-4" />
                     {totalItems > 0 && (
@@ -47,14 +32,10 @@ export function CabeceraPublica() {
                       </span>
                     )}
                     <span className="hidden sm:inline">Carrito</span>
-                    {totalItems > 0 && (
-                      <span className="sm:hidden">({totalItems})</span>
-                    )}
+                    {totalItems > 0 && <span className="sm:hidden">({totalItems})</span>}
                   </Link>
                 </Button>
-                <Button size="sm" variant="outline" onClick={cerrarSesion}>
-                  Salir
-                </Button>
+                <Button size="sm" variant="outline" onClick={cerrarSesion}>Salir</Button>
               </>
             )}
 

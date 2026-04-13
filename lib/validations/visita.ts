@@ -17,7 +17,7 @@ export const esquemaVisita = z.object({
     .min(10, "El teléfono debe tener al menos 10 dígitos")
     .max(20),
   tipo_servicio: z.enum(["instalacion", "reparacion", "consulta"], {
-    required_error: "Seleccioná el tipo de servicio",
+    message: "Seleccioná el tipo de servicio",
   }),
   notas: z.string().max(500).optional(),
 });

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";

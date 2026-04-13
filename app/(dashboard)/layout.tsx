@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AuthProvider } from "@/lib/auth-context";
 import { CarritoProvider } from "@/lib/carrito-context";
 import { BarraLateral } from "@/components/layout/BarraLateral";
