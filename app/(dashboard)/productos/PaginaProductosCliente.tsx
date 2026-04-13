@@ -1,0 +1,81 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { TarjetaProducto } from "@/components/productos/TarjetaProducto";
+import { FiltrosProductos } from "@/components/productos/FiltrosProductos";
+import { Plus, Package } from "lucide-react";
+import type { Producto, CategoriaProducto } from "@/types/database";
+
+interface PaginaProductosClienteProps {
+  productos: Producto[];
+  esAdmin: boolean;
+}
+
+export function PaginaProductosCliente({
+  productos,
+  esAdmin,
+}: PaginaProductosClienteProps) {
+  const [busqueda, setBusqueda] = useState("");
+  const [categoria, setCategoria] = useState<CategoriaProducto | "todas">("todas");
+
+  const productosFiltrados = useMemo(() => {
+    return productos.filter((p) => {
+      const coincideBusqueda =
+        busqueda === "" ||
+        p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        p.sku.toLowerCase().includes(busqueda.toLowerCase());
+
+      const coincideCategoria =
+        categoria === "todas" || p.categoria === categoria;
+
+      return coincideBusqueda && coincideCategoria;
+    });
+  }, [productos, busqueda, categoria]);
+
+  return (
+    <div className="space-y-5">
+      {/* Cabecera */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold">Catálogo de productos</h2>
+          <p className="text-sm text-muted-foreground">
+            {productosFiltrados.length} producto
+            {productosFiltrados.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        {esAdmin && (
+          <Button asChild size="sm" className="gap-2">
+            <Link href="/dashboard/productos/nuevo">
+              <Plus className="h-4 w-4" />
+              Nuevo producto
+            </Link>
+          </Button>
+        )}
+      </div>
+
+      {/* Filtros */}
+      <FiltrosProductos
+        busqueda={busqueda}
+        categoria={categoria}
+        onBusqueda={setBusqueda}
+        onCategoria={setCategoria}
+      />
+
+      {/* Grid de productos */}
+      {productosFiltrados.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+          <Package className="h-10 w-10" />
+          <p className="text-sm">No se encontraron productos</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {productosFiltrados.map((producto) => (
+            <TarjetaProducto key={producto.id} producto={producto} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
