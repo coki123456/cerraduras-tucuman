@@ -1,54 +1,37 @@
-# ─── Etapa 1: dependencias ───────────────────────────────────────────────────
-FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
+# Dockerfile para Cerraduras Tucumán con Coolify
+# Multi-stage build: instalación → construcción → runtime
+
+# Stage 1: Instalar dependencias
+FROM node:24-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN if [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --frozen-lockfile; \
+    elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then npm ci; \
+    else npm install; fi
 
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# ─── Etapa 2: build ──────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+# Stage 2: Construir la aplicación
+FROM node:24-alpine AS builder
 WORKDIR /app
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Las variables NEXT_PUBLIC_* se incrustan en el bundle en tiempo de build,
-# por eso se pasan como ARG (build-time). Las secretas van solo en runtime.
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ARG NEXT_PUBLIC_APP_URL
-
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
-ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
 RUN npm run build
 
-# ─── Etapa 3: imagen de producción ───────────────────────────────────────────
-FROM node:20-alpine AS runner
+# Stage 3: Runtime (solo dependencias de producción)
+FROM node:24-alpine AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Usuario sin privilegios de root
-RUN addgroup --system --gid 1001 nodejs \
- && adduser  --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Archivos públicos (incluye sw.js y archivos PWA generados en build)
 COPY --from=builder /app/public ./public
-
-# Output standalone: contiene server.js + dependencias mínimas
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 USER nextjs
-
 EXPOSE 3000
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]

@@ -41,3 +41,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# coolify & docker
+.coolify
+.env.docker
+.dockerignore
+docker-compose.override.yml
+
+# local development
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# logs
+*.log
+logs/
+
+# claude code (local)
+.claude/settings.local.json
