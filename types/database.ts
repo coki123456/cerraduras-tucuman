@@ -59,6 +59,7 @@ export type Database = {
           stock_minimo: number;
           categoria: "cerraduras" | "herrajes" | "accesorios";
           sku: string;
+          imagen_url: string | null;
           activo: boolean;
           created_at: string;
           updated_at: string;
@@ -73,6 +74,7 @@ export type Database = {
           stock_minimo?: number;
           categoria: "cerraduras" | "herrajes" | "accesorios";
           sku: string;
+          imagen_url?: string | null;
           activo?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -86,6 +88,7 @@ export type Database = {
           stock_minimo?: number;
           categoria?: "cerraduras" | "herrajes" | "accesorios";
           sku?: string;
+          imagen_url?: string | null;
           activo?: boolean;
           updated_at?: string;
         };

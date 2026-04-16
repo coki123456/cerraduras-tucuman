@@ -26,6 +26,7 @@ export const schemaProducto = z.object({
     .min(3, "El SKU debe tener al menos 3 caracteres")
     .max(20, "El SKU no puede superar 20 caracteres")
     .regex(/^[A-Z0-9\-]+$/, "El SKU solo puede contener letras mayúsculas, números y guiones"),
+  imagen_url: z.string().url("La URL de la imagen no es válida").optional().nullable(),
   activo: z.boolean().default(true),
 });
 

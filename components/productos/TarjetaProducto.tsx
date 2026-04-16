@@ -16,6 +16,8 @@ interface TarjetaProductoProps {
   producto: Producto;
 }
 
+import Image from "next/image";
+
 /** Molécula: tarjeta de producto con acción según rol */
 export function TarjetaProducto({ producto }: TarjetaProductoProps) {
   const { agregar } = useCarrito();
@@ -32,8 +34,25 @@ export function TarjetaProducto({ producto }: TarjetaProductoProps) {
   }
 
   return (
-    <Card className="border-border/50 flex flex-col hover:border-primary/40 transition-colors">
-      <CardContent className="pt-5 flex-1 space-y-3">
+    <Card className="border-border/50 flex flex-col hover:border-primary/40 transition-colors overflow-hidden group">
+      {/* Imagen del producto */}
+      <div className="relative aspect-square bg-muted/30 border-b border-border/50">
+        {producto.imagen_url ? (
+          <Image
+            src={producto.imagen_url}
+            alt={producto.nombre}
+            fill
+            className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/40">
+            <ShoppingCart className="h-12 w-12 mb-2" />
+            <span className="text-xs">Sin foto</span>
+          </div>
+        )}
+      </div>
+
+      <CardContent className="pt-4 flex-1 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm leading-tight truncate">

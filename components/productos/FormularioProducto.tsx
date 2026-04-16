@@ -23,6 +23,7 @@ import { MensajeError } from "@/components/auth/MensajeError";
 import { Loader2 } from "lucide-react";
 import { generarSKU } from "@/lib/utils";
 import { toast } from "sonner";
+import { SelectorImagen } from "./SelectorImagen";
 import type { Producto } from "@/types/database";
 
 interface FormularioProductoProps {
@@ -53,12 +54,14 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
           stock_minimo: producto.stock_minimo,
           categoria: producto.categoria,
           sku: producto.sku,
+          imagen_url: producto.imagen_url,
           activo: producto.activo,
         }
       : {
           stock: 0,
           stock_minimo: 5,
           activo: true,
+          imagen_url: null,
         },
   });
 
@@ -109,6 +112,12 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
       <CardContent>
         // @ts-ignore -- Zod v4 type incompatibility with SubmitHandler
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* Imagen */}
+          <SelectorImagen 
+            urlActual={watch("imagen_url")}
+            onImagenSeleccionada={(url) => setValue("imagen_url", url)}
+          />
+
           {/* Nombre */}
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre *</Label>
