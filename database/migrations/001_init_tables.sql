@@ -182,12 +182,10 @@ BEGIN
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'nombre_completo', split_part(NEW.email, '@', 1)),
-    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'cliente')
+    -- Agregamos "public." antes de "user_role"
+    COALESCE((NEW.raw_user_meta_data->>'role')::public.user_role, 'cliente')
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE TRIGGER trg_on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- Agregamos SET search_path = public por seguridad y contexto
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
