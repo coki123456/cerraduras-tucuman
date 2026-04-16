@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   LogOut,
   KeyRound,
+  User,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -31,6 +33,18 @@ const enlaces: EnlaceNav[] = [
     href: "/dashboard",
     label: "Inicio",
     icono: LayoutDashboard,
+    roles: ["cliente", "empleado", "admin"],
+  },
+  {
+    href: "/dashboard/admin/ventas",
+    label: "Ventas",
+    icono: ShoppingBag,
+    roles: ["admin"],
+  },
+  {
+    href: "/dashboard/perfil",
+    label: "Mi Perfil",
+    icono: User,
     roles: ["cliente", "empleado", "admin"],
   },
   {

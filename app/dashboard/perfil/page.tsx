@@ -1,0 +1,24 @@
+import { Metadata } from "next";
+import { FormularioPerfil } from "@/components/dashboard/perfil/FormularioPerfil";
+
+export const metadata: Metadata = {
+  title: "Mi Perfil | Cerraduras Tucumán",
+  description: "Gestioná tu información personal y de contacto.",
+};
+
+export default function PaginaPerfil() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Mi Perfil</h1>
+        <p className="text-muted-foreground">
+          Actualizá tus datos de contacto y dirección para las visitas de instalación.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-8">
+        <FormularioPerfil />
+      </div>
+    </div>
+  );
+}

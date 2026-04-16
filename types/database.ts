@@ -19,6 +19,8 @@ export type Database = {
           empresa: string | null;
           created_at: string;
           updated_at: string;
+          direccion: string | null;
+          ciudad: string | null;
           activo: boolean;
         };
         Insert: {
@@ -30,6 +32,8 @@ export type Database = {
           empresa?: string | null;
           created_at?: string;
           updated_at?: string;
+          direccion?: string | null;
+          ciudad?: string | null;
           activo?: boolean;
         };
         Update: {
@@ -40,6 +44,8 @@ export type Database = {
           telefono?: string | null;
           empresa?: string | null;
           updated_at?: string;
+          direccion?: string | null;
+          ciudad?: string | null;
           activo?: boolean;
         };
       };

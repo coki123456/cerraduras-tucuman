@@ -1,4 +1,5 @@
-import MercadoPagoConfig, { Preference, Payment } from "mercadopago";
+import MercadoPagoConfig, { Preference, Payment, MerchantOrder } from "mercadopago";
+import crypto from "crypto";
 
 function getClient() {
   return new MercadoPagoConfig({
@@ -47,4 +48,46 @@ export async function crearPreferenciaMP(
 export async function obtenerPago(paymentId: string) {
   const payment = new Payment(getClient());
   return payment.get({ id: paymentId });
+}
+
+export async function obtenerOrdenMercante(orderId: string) {
+  const order = new MerchantOrder(getClient());
+  return order.get({ merchantOrderId: orderId });
+}
+
+/**
+ * Verifica la firma de un Webhook de Mercado Pago (v2)
+ */
+export function verificarFirmaWebhook(
+  signatureHeader: string,
+  dataId: string,
+  secret: string
+): boolean {
+  try {
+    const parts = signatureHeader.split(",");
+    let ts = "";
+    let v1 = "";
+
+    parts.forEach((part) => {
+      const [key, value] = part.split("=");
+      if (key.trim() === "ts") ts = value.trim();
+      if (key.trim() === "v1") v1 = value.trim();
+    });
+
+    if (!ts || !v1) return false;
+
+    // El esquema de firma v2 de MP usa: id:[data.id];ts:[timestamp];
+    // Pero la documentación oficial dice que se usa el manifest:
+    // "template" : "id:${data.id};ts:${timestamp};"
+    const manifest = `id:${dataId};ts:${ts};`;
+    
+    const hmac = crypto.createHmac("sha256", secret);
+    hmac.update(manifest);
+    const sha = hmac.digest("hex");
+
+    return sha === v1;
+  } catch (error) {
+    console.error("Error verificando firma:", error);
+    return false;
+  }
 }

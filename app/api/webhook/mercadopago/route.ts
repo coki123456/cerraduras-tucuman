@@ -1,7 +1,11 @@
-// @ts-nocheck -- supabase-js join type inference issues with joined selects
+// @ts-nocheck -- supabase-js join type inference issues
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { obtenerPago } from "@/lib/services/mercadopago.service";
+import { 
+  obtenerPago, 
+  obtenerOrdenMercante,
+  verificarFirmaWebhook 
+} from "@/lib/services/mercadopago.service";
 import {
   enviarEmailCompraConfirmada,
   enviarEmailAlertaStock,
@@ -9,28 +13,49 @@ import {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
+  const signature = request.headers.get("x-signature");
+  
+  if (!body) return NextResponse.json({ ok: true });
 
-  if (!body || body.type !== "payment") {
-    return NextResponse.json({ ok: true });
+  const dataId = body.data?.id || body.resource?.split("/").pop();
+  if (!dataId) return NextResponse.json({ ok: true });
+
+  // 1. Verificar firma (Seguridad)
+  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  if (secret && signature) {
+    const esValido = verificarFirmaWebhook(signature, dataId, secret);
+    if (!esValido) {
+      console.warn("Firma de webhook de Mercado Pago inválida");
+      return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
+    }
   }
 
-  const paymentId = String(body.data?.id);
-
   try {
-    const pago = await obtenerPago(paymentId);
-
-    if (pago.status !== "approved") {
-      return NextResponse.json({ ok: true });
-    }
-
-    const ventaId = pago.external_reference;
-    if (!ventaId) {
-      return NextResponse.json({ error: "Sin external_reference" }, { status: 400 });
-    }
-
     const supabase = await createAdminClient();
+    let paymentId: string | null = null;
+    let ventaId: string | null = null;
 
-    // Verificar que la venta no fue ya procesada
+    // 2. Identificar el tipo de notificación y obtener datos básicos
+    if (body.type === "payment") {
+      paymentId = String(dataId);
+      const pago = await obtenerPago(paymentId);
+      if (pago.status !== "approved") return NextResponse.json({ ok: true });
+      ventaId = pago.external_reference;
+    } 
+    else if (body.topic === "merchant_order" || body.type === "merchant_order") {
+      const orden = await obtenerOrdenMercante(String(dataId));
+      // Si la orden está pagada totalmente
+      if (orden.status === "closed" || orden.order_status === "paid") {
+        ventaId = orden.external_reference;
+        // Buscamos el ID del último pago aprobado
+        const pagoAprobado = orden.payments?.find(p => p.status === "approved");
+        paymentId = pagoAprobado ? String(pagoAprobado.id) : null;
+      }
+    }
+
+    if (!ventaId) return NextResponse.json({ ok: true });
+
+    // 3. Procesar la venta si está pendiente
     const { data: venta } = await supabase
       .from("ventas")
       .select("*, users(email, nombre_completo)")
@@ -41,6 +66,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    // 4. Confirmación Atómica
     // Obtener admin id para las alertas
     const { data: admin } = await supabase
       .from("users")
@@ -49,22 +75,20 @@ export async function POST(request: Request) {
       .limit(1)
       .single();
 
-    // Ejecutar confirmación atómica (descuenta stock + crea alertas)
     await supabase.rpc("confirmar_venta", {
       p_venta_id: ventaId,
       p_payment_id: paymentId,
       p_admin_id: admin?.id ?? "",
     });
 
-    // Obtener items para el email
+    // 5. Notificaciones (Email)
     const { data: items } = await supabase
       .from("venta_items")
       .select("*, productos(nombre)")
       .eq("venta_id", ventaId);
 
-    // Email de confirmación al cliente
-    const clienteEmail = (venta as { users?: { email: string; nombre_completo: string } }).users?.email;
-    const clienteNombre = (venta as { users?: { email: string; nombre_completo: string } }).users?.nombre_completo ?? "Cliente";
+    const clienteEmail = (venta as any).users?.email;
+    const clienteNombre = (venta as any).users?.nombre_completo ?? "Cliente";
 
     if (clienteEmail && items) {
       await enviarEmailCompraConfirmada({
@@ -72,7 +96,7 @@ export async function POST(request: Request) {
         clienteNombre,
         ventaId,
         items: items.map((i) => ({
-          nombre: (i as { productos?: { nombre: string } }).productos?.nombre ?? "Producto",
+          nombre: (i as any).productos?.nombre ?? "Producto",
           cantidad: i.cantidad,
           precio_unitario: i.precio_unitario,
           subtotal: i.subtotal,
@@ -81,26 +105,21 @@ export async function POST(request: Request) {
       });
     }
 
-    // Verificar alertas de stock recién creadas y enviar emails
+    // 6. Alertas de Stock
     const { data: alertasNuevas } = await supabase
       .from("stock_alerts")
       .select("*, productos(nombre)")
       .eq("resuelto", false)
       .eq("leido", false)
-      .order("triggered_at", { ascending: false })
-      .limit(10);
+      .limit(5);
 
     for (const alerta of alertasNuevas ?? []) {
       await enviarEmailAlertaStock({
-        productoNombre: (alerta as { productos?: { nombre: string } }).productos?.nombre ?? "Producto",
+        productoNombre: (alerta as any).productos?.nombre ?? "Producto",
         stockActual: alerta.stock_actual,
         stockMinimo: alerta.stock_minimo,
       });
-      // Marcar como notificado
-      await supabase
-        .from("stock_alerts")
-        .update({ leido: true })
-        .eq("id", alerta.id);
+      await supabase.from("stock_alerts").update({ leido: true }).eq("id", alerta.id);
     }
 
     return NextResponse.json({ ok: true });
