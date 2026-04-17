@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Crear una respuesta mutable para poder setear cookies (refresh de sesión)
   const response = NextResponse.next({ request });
 
