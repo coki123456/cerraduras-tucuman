@@ -59,11 +59,11 @@ export function Encabezado() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/50 bg-background/80 backdrop-blur-sm px-4 lg:px-6">
       {/* Hamburger (mobile) */}
       <Sheet>
-        <SheetTrigger>
-          <Button variant="ghost" size="icon" className="lg:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Abrir menú</span>
-          </Button>
+        <SheetTrigger
+          render={<Button variant="ghost" size="icon" className="lg:hidden" />}
+        >
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Abrir menú</span>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-60">
           <BarraLateral />
@@ -127,7 +127,7 @@ export function Encabezado() {
               className="text-destructive focus:text-destructive"
               onClick={async () => {
                 await cerrarSesion();
-                router.push("/");
+                router.push("/login");
               }}
             >
               Cerrar sesión

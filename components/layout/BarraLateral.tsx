@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   LayoutDashboard,
@@ -94,6 +94,7 @@ const enlaces: EnlaceNav[] = [
 
 export function BarraLateral() {
   const pathname = usePathname();
+  const router = useRouter();
   const { role, cerrarSesion } = useAuth();
 
   const enlacesFiltrados = enlaces.filter(
@@ -149,7 +150,10 @@ export function BarraLateral() {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-          onClick={cerrarSesion}
+          onClick={async () => {
+            await cerrarSesion();
+            router.push("/login");
+          }}
         >
           <LogOut className="h-4 w-4" />
           Cerrar sesión

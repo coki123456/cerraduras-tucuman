@@ -30,7 +30,7 @@ export function FormularioPerfil() {
       setCargando(false);
     }
     cargarPerfil();
-  }, [supabase]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
