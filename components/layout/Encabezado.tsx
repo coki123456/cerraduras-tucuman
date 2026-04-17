@@ -104,14 +104,12 @@ export function Encabezado() {
 
         {/* Avatar + Dropdown */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
-                  {iniciales}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+          <DropdownMenuTrigger className="p-2 hover:bg-muted rounded-full transition-colors">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
+                {iniciales}
+              </AvatarFallback>
+            </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>
@@ -127,7 +125,10 @@ export function Encabezado() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={cerrarSesion}
+              onClick={async () => {
+                await cerrarSesion();
+                router.push("/");
+              }}
             >
               Cerrar sesión
             </DropdownMenuItem>

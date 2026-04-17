@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,14 +73,12 @@ export function ActualizadorEstadoEntrega({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" disabled={actualizando}>
-          {actualizando ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <MoreVertical className="h-4 w-4" />
-          )}
-        </Button>
+      <DropdownMenuTrigger className="p-1.5 hover:bg-muted rounded transition-colors disabled:opacity-50 disabled:pointer-events-none" disabled={actualizando}>
+        {actualizando ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <MoreVertical className="h-4 w-4" />
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Cambiar estado de compra</DropdownMenuLabel>
