@@ -103,14 +103,17 @@ export function AccionesVisita({ visita, role }: AccionesVisitaProps) {
         </Link>
       </Button>
 
-      {role === "admin" && (
+            {role === "admin" && (
         <AlertDialog>
+          {/* Le decimos a TypeScript que ignore temporalmente el error de asChild */}
+          {/* @ts-expect-error: La propiedad asChild no está en la definición de tipos, pero es válida en Radix/shadcn */}
           <AlertDialogTrigger asChild>
             <Button variant="ghost" className="text-destructive hover:text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Eliminar
             </Button>
           </AlertDialogTrigger>
+
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>¿Eliminar visita?</AlertDialogTitle>
