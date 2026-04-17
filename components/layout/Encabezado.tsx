@@ -9,7 +9,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -112,12 +111,10 @@ export function Encabezado() {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>
-              <p className="font-medium truncate">{nombreCompleto}</p>
-              <p className="text-xs font-normal text-muted-foreground truncate">
-                {user?.email}
-              </p>
-            </DropdownMenuLabel>
+            <div className="px-2 py-1.5 border-b border-border/50 mb-1">
+              <p className="text-sm font-medium truncate">{nombreCompleto}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/dashboard/perfil")}>
               Mi perfil
