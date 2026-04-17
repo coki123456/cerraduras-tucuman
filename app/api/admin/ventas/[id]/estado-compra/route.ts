@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { RouteContext } from "next/server";
 import type { EstadoCompra } from "@/types/database";
@@ -28,9 +28,8 @@ export async function PATCH(
       );
     }
 
-    const supabase = await createAdminClient();
-
-    // Verificar que sea admin
+    // Verificar autenticación con el cliente normal (tiene las cookies del request)
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -52,8 +51,9 @@ export async function PATCH(
       );
     }
 
-    // Obtener la venta actual
-    const { data: venta } = await supabase
+    // Obtener la venta actual (con admin client para bypasear RLS)
+    const adminClient = await createAdminClient();
+    const { data: venta } = await adminClient
       .from("ventas")
       .select("*")
       .eq("id", id)
@@ -77,8 +77,8 @@ export async function PATCH(
       );
     }
 
-    // Actualizar estado de compra
-    await supabase
+    // Actualizar estado de compra con admin client
+    await adminClient
       .from("ventas")
       .update({
         estado_compra,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, ShoppingCart, Bell } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,6 +40,7 @@ function obtenerTitulo(pathname: string): string {
 
 export function Encabezado() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, role, nombreCompleto, cerrarSesion } = useAuth();
   const { totalItems } = useCarrito();
 
@@ -119,6 +120,10 @@ export function Encabezado() {
                 {user?.email}
               </p>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/dashboard/perfil")}>
+              Mi perfil
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"

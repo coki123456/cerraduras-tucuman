@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { RouteContext } from "next/server";
 import type { EstadoPago } from "@/types/database";
@@ -20,9 +20,8 @@ export async function PATCH(
       );
     }
 
-    const supabase = await createAdminClient();
-
-    // Verificar que sea admin
+    // Verificar autenticación con el cliente normal (tiene las cookies del request)
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -44,8 +43,9 @@ export async function PATCH(
       );
     }
 
-    // Obtener la venta actual
-    const { data: venta } = await supabase
+    // Obtener la venta actual (con admin client para bypasear RLS)
+    const adminClient = await createAdminClient();
+    const { data: venta } = await adminClient
       .from("ventas")
       .select("*")
       .eq("id", id)
@@ -60,7 +60,7 @@ export async function PATCH(
 
     // Si se marca como pagado y aún no se procesó el stock
     if (estado_pago === "pagado" && venta.estado_pago === "pendiente") {
-      const { data: admin } = await supabase
+      const { data: admin } = await adminClient
         .from("users")
         .select("id")
         .eq("role", "admin")
@@ -68,7 +68,7 @@ export async function PATCH(
         .single();
 
       // Llamar a la función RPC confirmar_venta
-      await supabase.rpc("confirmar_venta", {
+      await adminClient.rpc("confirmar_venta", {
         p_venta_id: id,
         p_payment_id: null, // Sin ID de MercadoPago (pago manual)
         p_admin_id: admin?.id ?? "",
@@ -76,7 +76,7 @@ export async function PATCH(
     }
     // Si se marca como rechazado
     else if (estado_pago === "rechazado") {
-      await supabase
+      await adminClient
         .from("ventas")
         .update({
           estado_pago: "rechazado",

@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCarrito } from "@/lib/carrito-context";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -10,13 +11,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ResumenCarrito } from "@/components/carrito/ResumenCarrito";
 import { formatARS } from "@/lib/utils";
-import { CreditCard, ArrowLeft, Loader2 } from "lucide-react";
+import { CreditCard, Banknote, ArrowLeft, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PaginaCheckout() {
+  const router = useRouter();
   const { items, totalItems, totalMonto, vaciar } = useCarrito();
   const { user, nombreCompleto } = useAuth();
   const [procesando, setProcesando] = useState(false);
+  const [metodoPago, setMetodoPago] = useState<"mercadopago" | "efectivo">("mercadopago");
 
   if (items.length === 0) {
     return (
@@ -33,23 +36,46 @@ export default function PaginaCheckout() {
     setProcesando(true);
 
     try {
-      const res = await fetch("/api/ventas/create-preference", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
-      });
+      if (metodoPago === "mercadopago") {
+        // Flujo MercadoPago actual
+        const res = await fetch("/api/ventas/create-preference", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items }),
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok) {
-        toast.error(data.error ?? "Error al procesar el pago");
-        setProcesando(false);
-        return;
+        if (!res.ok) {
+          toast.error(data.error ?? "Error al procesar el pago");
+          setProcesando(false);
+          return;
+        }
+
+        // Vaciar carrito y redirigir a MercadoPago
+        vaciar();
+        window.location.href = data.initPoint;
+      } else {
+        // Flujo de pago en efectivo
+        const res = await fetch("/api/ventas/crear-efectivo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          toast.error(data.error ?? "Error al crear la venta");
+          setProcesando(false);
+          return;
+        }
+
+        // Vaciar carrito y redirigir a la página de compras
+        vaciar();
+        toast.success("Pedido creado. El admin confirmará el pago.");
+        router.push("/dashboard/compras");
       }
-
-      // Vaciar carrito y redirigir a MercadoPago
-      vaciar();
-      window.location.href = data.initPoint;
     } catch {
       toast.error("Error de conexión. Intentá de nuevo.");
       setProcesando(false);
@@ -109,6 +135,50 @@ export default function PaginaCheckout() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Método de pago */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Método de pago</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <button
+                onClick={() => setMetodoPago("mercadopago")}
+                className={`w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                  metodoPago === "mercadopago"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <CreditCard className="h-5 w-5" />
+                <div className="flex-1 text-left">
+                  <p className="font-medium">MercadoPago</p>
+                  <p className="text-xs text-muted-foreground">Pago online inmediato</p>
+                </div>
+                {metodoPago === "mercadopago" && (
+                  <Check className="h-5 w-5 text-primary" />
+                )}
+              </button>
+
+              <button
+                onClick={() => setMetodoPago("efectivo")}
+                className={`w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                  metodoPago === "efectivo"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <Banknote className="h-5 w-5" />
+                <div className="flex-1 text-left">
+                  <p className="font-medium">Efectivo</p>
+                  <p className="text-xs text-muted-foreground">El admin confirma el pago</p>
+                </div>
+                {metodoPago === "efectivo" && (
+                  <Check className="h-5 w-5 text-primary" />
+                )}
+              </button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Resumen + Botón pago */}
@@ -124,10 +194,15 @@ export default function PaginaCheckout() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Procesando…
                 </>
-              ) : (
+              ) : metodoPago === "mercadopago" ? (
                 <>
                   <CreditCard className="h-4 w-4" />
-                  Pagar con Mercadopago
+                  Ir a MercadoPago
+                </>
+              ) : (
+                <>
+                  <Banknote className="h-4 w-4" />
+                  Confirmar pedido
                 </>
               )}
             </Button>
