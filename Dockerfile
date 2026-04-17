@@ -1,5 +1,7 @@
 # Dockerfile para Cerraduras Tucumán con Coolify
 # Multi-stage build: instalación → construcción → runtime
+# ⚠️ IMPORTANTE: Los secretos (MERCADOPAGO_ACCESS_TOKEN, BREVO_API_KEY, CRON_SECRET)
+# NO deben pasar como ARG. Se inyectan como variables de entorno en runtime via docker-compose.
 
 # Stage 1: Instalar dependencias
 FROM node:24-alpine AS deps
@@ -11,20 +13,44 @@ RUN if [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --frozen-
     else npm install; fi
 
 # Stage 2: Construir la aplicación
+# Los secretos NO se usan aquí. Solo variables NEXT_PUBLIC_* que son públicas.
 FROM node:24-alpine AS builder
 WORKDIR /app
+
+# ARG solo para variables públicas que se incrustan en el cliente
+# NUNCA uses ARG para secretos (MERCADOPAGO, BREVO, CRON_SECRET)
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_APP_URL
+
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Build: los secretos del servidor NO se necesitan en build
 RUN npm run build
 
 # Stage 3: Runtime (solo dependencias de producción)
 FROM node:24-alpine AS runner
 WORKDIR /app
+
+# Variables de entorno para runtime
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Los secretos se inyectan en runtime via docker-compose environment:
+# - MERCADOPAGO_ACCESS_TOKEN
+# - MERCADOPAGO_WEBHOOK_SECRET
+# - SUPABASE_SERVICE_ROLE_KEY
+# - BREVO_API_KEY
+# - CRON_SECRET
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
@@ -32,6 +58,8 @@ COPY --from=builder /app/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3000
-ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
 CMD ["node", "server.js"]
