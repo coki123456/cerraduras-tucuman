@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { InsigniaEstadoVenta } from "@/components/ventas/InsigniaEstadoVenta";
 import { InsigniaEstadoPago } from "@/components/ventas/InsigniaEstadoPago";
 import { InsigniaEstadoCompra } from "@/components/ventas/InsigniaEstadoCompra";
+import { ActualizadorEstadoPago } from "@/components/admin/ActualizadorEstadoPago";
+import { ActualizadorEstadoEntrega } from "@/components/admin/ActualizadorEstadoEntrega";
 import { formatARS, formatFechaHora } from "@/lib/utils";
 import { ArrowLeft, CreditCard } from "lucide-react";
 import type { RouteContext } from "next/server";
@@ -87,8 +89,26 @@ export default async function PaginaDetalleCompra(
           </p>
         </div>
         <div className="flex gap-2">
-          <InsigniaEstadoPago estado={venta.estado_pago} />
-          <InsigniaEstadoCompra estado={venta.estado_compra} />
+          {isAdmin ? (
+            <>
+              <ActualizadorEstadoPago
+                ventaId={venta.id}
+                estadoPago={venta.estado_pago}
+              />
+              <ActualizadorEstadoEntrega
+                ventaId={venta.id}
+                estadoCompra={venta.estado_compra}
+                clienteNombre={(venta.users as any)?.nombre_completo ?? ""}
+                clienteEmail={(venta.users as any)?.email ?? ""}
+                clienteTelefono={(venta.users as any)?.telefono ?? ""}
+              />
+            </>
+          ) : (
+            <>
+              <InsigniaEstadoPago estado={venta.estado_pago} />
+              <InsigniaEstadoCompra estado={venta.estado_compra} />
+            </>
+          )}
         </div>
       </div>
 

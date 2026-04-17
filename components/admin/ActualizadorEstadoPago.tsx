@@ -13,55 +13,45 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Loader2, MoreVertical, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { ETIQUETAS_ESTADO_COMPRA } from "@/lib/utils";
-import type { EstadoCompra } from "@/types/database";
+import type { EstadoPago } from "@/types/database";
 
-interface ActualizadorEstadoEntregaProps {
+interface ActualizadorEstadoPagoProps {
   ventaId: string;
-  estadoCompra: EstadoCompra;
-  clienteNombre: string;
-  clienteEmail: string;
-  clienteTelefono: string;
+  estadoPago: EstadoPago;
 }
 
-const ESTADOS_COMPRA: EstadoCompra[] = [
-  "en_proceso",
-  "en_preparacion",
-  "lista_para_retirar",
-  "despachado",
-  "finalizado",
-];
+const ESTADOS_PAGO: EstadoPago[] = ["pendiente", "pagado", "rechazado"];
 
-export function ActualizadorEstadoEntrega({
+const ETIQUETAS_ESTADO_PAGO: Record<EstadoPago, string> = {
+  pendiente: "Pendiente",
+  pagado: "Pagado",
+  rechazado: "Rechazado",
+};
+
+export function ActualizadorEstadoPago({
   ventaId,
-  estadoCompra,
-  clienteNombre,
-  clienteEmail,
-  clienteTelefono,
-}: ActualizadorEstadoEntregaProps) {
+  estadoPago,
+}: ActualizadorEstadoPagoProps) {
   const router = useRouter();
   const [actualizando, setActualizando] = useState(false);
 
-  async function cambiarEstado(nuevoEstado: EstadoCompra) {
+  async function cambiarEstado(nuevoEstado: EstadoPago) {
     setActualizando(true);
     try {
-      const response = await fetch(
-        `/api/admin/ventas/${ventaId}/estado-compra`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ estado_compra: nuevoEstado }),
-        }
-      );
+      const response = await fetch(`/api/admin/ventas/${ventaId}/estado-pago`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado_pago: nuevoEstado }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        toast.error(error.error || "Error al cambiar estado");
+        toast.error(error.error || "Error al cambiar estado de pago");
         return;
       }
 
       toast.success(
-        `Estado actualizado a: ${ETIQUETAS_ESTADO_COMPRA[nuevoEstado]}`
+        `Estado de pago actualizado a: ${ETIQUETAS_ESTADO_PAGO[nuevoEstado]}`
       );
       router.refresh();
     } catch (err) {
@@ -84,21 +74,21 @@ export function ActualizadorEstadoEntrega({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Cambiar estado de compra</DropdownMenuLabel>
+        <DropdownMenuLabel>Cambiar estado de pago</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {ESTADOS_COMPRA.map((estado) => (
+        {ESTADOS_PAGO.map((estado) => (
           <DropdownMenuItem
             key={estado}
             onClick={() => cambiarEstado(estado)}
-            disabled={actualizando || estado === estadoCompra}
+            disabled={actualizando || estado === estadoPago}
             className="cursor-pointer"
           >
-            {estado === estadoCompra && (
+            {estado === estadoPago && (
               <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
             )}
-            {estado !== estadoCompra && <div className="w-6" />}
-            <span>{ETIQUETAS_ESTADO_COMPRA[estado]}</span>
+            {estado !== estadoPago && <div className="w-6" />}
+            <span>{ETIQUETAS_ESTADO_PAGO[estado]}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
