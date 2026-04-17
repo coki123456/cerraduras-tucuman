@@ -1,7 +1,6 @@
-// @ts-nocheck
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -39,8 +38,9 @@ export function FormularioVisita({ visita }: FormularioVisitaProps) {
   const esEdicion = !!visita;
 
   const form = useForm<EntradaVisita>({
-    // @ts-ignore -- Zod v4 coerce type incompatibility with react-hook-form
-    resolver: zodResolver(esquemaVisita),
+    // zodResolver es compatible con react-hook-form; el cast a Resolver<EntradaVisita>
+    // resuelve la discrepancia de tipos entre Zod v4 y @hookform/resolvers
+    resolver: zodResolver(esquemaVisita) as Resolver<EntradaVisita>,
     defaultValues: {
       fecha: visita?.fecha ?? "",
       hora_inicio: visita?.hora_inicio?.slice(0, 5) ?? "",
@@ -52,10 +52,8 @@ export function FormularioVisita({ visita }: FormularioVisitaProps) {
     },
   });
 
-  async function onSubmit(valores: EntradaVisita) {
-    const url = esEdicion
-      ? `/api/visitas/${visita!.id}`
-      : "/api/visitas";
+  const onSubmit: SubmitHandler<EntradaVisita> = async (valores) => {
+    const url = esEdicion ? `/api/visitas/${visita!.id}` : "/api/visitas";
     const method = esEdicion ? "PUT" : "POST";
 
     const res = await fetch(url, {
@@ -64,7 +62,7 @@ export function FormularioVisita({ visita }: FormularioVisitaProps) {
       body: JSON.stringify(valores),
     });
 
-    const data = await res.json();
+    const data = await res.json() as { error?: string };
 
     if (!res.ok) {
       toast.error(data.error ?? "Error al guardar la visita");
@@ -74,10 +72,10 @@ export function FormularioVisita({ visita }: FormularioVisitaProps) {
     toast.success(esEdicion ? "Visita actualizada" : "Visita creada");
     router.push("/dashboard/visitas");
     router.refresh();
-  }
+  };
 
-  // @ts-ignore -- Zod v4 type incompatibility with SubmitHandler
-  return (<Form {...form}>
+  return (
+    <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Fecha */}

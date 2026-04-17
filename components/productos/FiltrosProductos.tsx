@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -8,38 +10,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
-import type { CategoriaProducto } from "@/types/database";
+import { Search, Loader2 } from "lucide-react";
 
 interface FiltrosProductosProps {
-  busqueda: string;
-  categoria: CategoriaProducto | "todas";
-  onBusqueda: (valor: string) => void;
-  onCategoria: (valor: CategoriaProducto | "todas") => void;
+  busquedaActual: string;
+  categoriaActual: string;
 }
 
-/** Molécula: barra de búsqueda + filtro de categoría */
-export function FiltrosProductos({
-  busqueda,
-  categoria,
-  onBusqueda,
-  onCategoria,
-}: FiltrosProductosProps) {
+/** Actualiza los filtros en la URL → el Server Component re-filtra en Supabase */
+export function FiltrosProductos({ busquedaActual, categoriaActual }: FiltrosProductosProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const actualizarUrl = useCallback(
+    (busqueda: string, categoria: string) => {
+      const params = new URLSearchParams();
+      if (busqueda) params.set("busqueda", busqueda);
+      if (categoria && categoria !== "todas") params.set("categoria", categoria);
+      const query = params.toString();
+      startTransition(() => {
+        router.push(`/dashboard/productos${query ? `?${query}` : ""}`);
+      });
+    },
+    [router]
+  );
+
   return (
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {isPending && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
         <Input
           placeholder="Buscar productos…"
           className="pl-9"
-          value={busqueda}
-          onChange={(e) => onBusqueda(e.target.value)}
+          defaultValue={busquedaActual}
+          onChange={(e) => actualizarUrl(e.target.value, categoriaActual)}
         />
       </div>
 
       <Select
-        value={categoria}
-        onValueChange={(v) => onCategoria(v as CategoriaProducto | "todas")}
+        defaultValue={categoriaActual}
+        onValueChange={(v) => actualizarUrl(busquedaActual, v)}
       >
         <SelectTrigger className="w-full sm:w-44">
           <SelectValue placeholder="Categoría" />

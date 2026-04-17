@@ -31,17 +31,21 @@ const STORAGE_KEY = "cerraduras-carrito";
 
 const CarritoContext = createContext<CarritoContextValue | null>(null);
 
+function parsearItems(raw: string | null): ItemCarrito[] {
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as ItemCarrito[];
+  } catch {
+    return [];
+  }
+}
+
 export function CarritoProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ItemCarrito[]>([]);
 
   // Cargar desde localStorage al montar
   useEffect(() => {
-    try {
-      const guardado = localStorage.getItem(STORAGE_KEY);
-      if (guardado) setItems(JSON.parse(guardado));
-    } catch {
-      // localStorage no disponible o datos corruptos
-    }
+    setItems(parsearItems(localStorage.getItem(STORAGE_KEY)));
   }, []);
 
   // Persistir en localStorage al cambiar
@@ -52,6 +56,17 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       // Sin-op
     }
   }, [items]);
+
+  // Sincronización entre pestañas: escuchar cambios de localStorage en otras ventanas
+  useEffect(() => {
+    function handleStorageChange(e: StorageEvent) {
+      if (e.key === STORAGE_KEY) {
+        setItems(parsearItems(e.newValue));
+      }
+    }
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const agregar = useCallback(
     (nuevoItem: Omit<ItemCarrito, "cantidad"> & { cantidad?: number }) => {

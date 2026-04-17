@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -26,28 +25,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Solo los clientes pueden comprar" }, { status: 403 });
   }
 
-  const body = await request.json();
+  const body = await request.json() as unknown;
   const validacion = schemaCheckout.safeParse(body);
   if (!validacion.success) {
-    return NextResponse.json({ error: validacion.error.errors[0].message }, { status: 400 });
+    return NextResponse.json({ error: validacion.error.issues[0].message }, { status: 400 });
   }
 
   const { items } = validacion.data;
 
-  // Verificar stock disponible
-  for (const item of items) {
-    const { data: producto } = await supabase
-      .from("productos")
-      .select("stock, activo")
-      .eq("id", item.producto_id)
-      .single();
+  // Verificar stock con una sola query (evita N+1)
+  const ids = items.map((i) => i.producto_id);
+  const { data: productos } = await supabase
+    .from("productos")
+    .select("id, stock, activo, nombre")
+    .in("id", ids);
 
+  const mapaProductos = new Map((productos ?? []).map((p) => [p.id, p]));
+
+  for (const item of items) {
+    const producto = mapaProductos.get(item.producto_id);
     if (!producto?.activo) {
       return NextResponse.json({ error: `El producto "${item.nombre}" ya no está disponible` }, { status: 400 });
     }
-    if ((producto?.stock ?? 0) < item.cantidad) {
+    if ((producto.stock ?? 0) < item.cantidad) {
       return NextResponse.json(
-        { error: `Stock insuficiente para "${item.nombre}". Disponible: ${producto?.stock}` },
+        { error: `Stock insuficiente para "${item.nombre}". Disponible: ${producto.stock}` },
         { status: 400 }
       );
     }
@@ -55,7 +57,6 @@ export async function POST(request: Request) {
 
   const totalMonto = items.reduce((acc, i) => acc + i.precio_unitario * i.cantidad, 0);
 
-  // Crear venta en estado pendiente con pago en efectivo
   const { data: venta, error: errorVenta } = await supabase
     .from("ventas")
     .insert({
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
       total_monto: totalMonto,
       estado: "pendiente",
       metodo_pago: "efectivo",
-      estado_pago: "pendiente", // El admin debe confirmarlo
+      estado_pago: "pendiente",
       estado_compra: "en_proceso",
     })
     .select()
@@ -73,7 +74,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No se pudo crear la venta" }, { status: 500 });
   }
 
-  // Insertar items
   const { error: errorItems } = await supabase.from("venta_items").insert(
     items.map((i) => ({
       venta_id: venta.id,
@@ -85,7 +85,6 @@ export async function POST(request: Request) {
   );
 
   if (errorItems) {
-    // Limpiar venta huérfana
     await supabase.from("ventas").delete().eq("id", venta.id);
     return NextResponse.json({ error: "Error al procesar el carrito" }, { status: 500 });
   }

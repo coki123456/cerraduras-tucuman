@@ -1,29 +1,34 @@
-// @ts-nocheck -- supabase-js join type inference issues
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { 
-  obtenerPago, 
+import {
+  obtenerPago,
   obtenerOrdenMercante,
-  verificarFirmaWebhook 
+  verificarFirmaWebhook,
 } from "@/lib/services/mercadopago.service";
 import {
   enviarEmailCompraConfirmada,
   enviarEmailAlertaStock,
 } from "@/lib/services/email.service";
+import type {
+  VentaConCliente,
+  VentaItemConProducto,
+  StockAlertConProducto,
+} from "@/types/database";
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const signature = request.headers.get("x-signature");
-  
+
   if (!body) return NextResponse.json({ ok: true });
 
-  const dataId = body.data?.id || body.resource?.split("/").pop();
+  const dataId = (body.data as Record<string, unknown>)?.id
+    ?? (body.resource as string)?.split("/").pop();
   if (!dataId) return NextResponse.json({ ok: true });
 
   // 1. Verificar firma (Seguridad)
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
   if (secret && signature) {
-    const esValido = verificarFirmaWebhook(signature, dataId, secret);
+    const esValido = verificarFirmaWebhook(signature, String(dataId), secret);
     if (!esValido) {
       console.warn("Firma de webhook de Mercado Pago inválida");
       return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
@@ -40,15 +45,13 @@ export async function POST(request: Request) {
       paymentId = String(dataId);
       const pago = await obtenerPago(paymentId);
       if (pago.status !== "approved") return NextResponse.json({ ok: true });
-      ventaId = pago.external_reference;
-    } 
-    else if (body.topic === "merchant_order" || body.type === "merchant_order") {
+      ventaId = pago.external_reference as string;
+    } else if (body.topic === "merchant_order" || body.type === "merchant_order") {
       const orden = await obtenerOrdenMercante(String(dataId));
-      // Si la orden está pagada totalmente
       if (orden.status === "closed" || orden.order_status === "paid") {
-        ventaId = orden.external_reference;
-        // Buscamos el ID del último pago aprobado
-        const pagoAprobado = orden.payments?.find(p => p.status === "approved");
+        ventaId = orden.external_reference as string;
+        const pagoAprobado = (orden.payments as Array<{ status: string; id: string }>)
+          ?.find((p) => p.status === "approved");
         paymentId = pagoAprobado ? String(pagoAprobado.id) : null;
       }
     }
@@ -56,18 +59,19 @@ export async function POST(request: Request) {
     if (!ventaId) return NextResponse.json({ ok: true });
 
     // 3. Procesar la venta si está pendiente
-    const { data: venta } = await supabase
+    const { data: ventaRaw } = await supabase
       .from("ventas")
       .select("*, users(email, nombre_completo)")
       .eq("id", ventaId)
       .single();
+
+    const venta = ventaRaw as VentaConCliente | null;
 
     if (!venta || venta.estado_pago !== "pendiente") {
       return NextResponse.json({ ok: true });
     }
 
     // 4. Confirmación Atómica
-    // Obtener admin id para las alertas
     const { data: admin } = await supabase
       .from("users")
       .select("id")
@@ -75,20 +79,42 @@ export async function POST(request: Request) {
       .limit(1)
       .single();
 
-    await supabase.rpc("confirmar_venta", {
+    const { error: errorConfirmacion } = await supabase.rpc("confirmar_venta", {
       p_venta_id: ventaId,
       p_payment_id: paymentId,
       p_admin_id: admin?.id ?? "",
     });
 
+    // RACE CONDITION / STOCK INSUFICIENTE:
+    // Si confirmar_venta falla (ej: stock llegó a 0 por compra simultánea),
+    // el cliente YA pagó. Marcamos para reembolso manual en lugar de fallar silenciosamente.
+    if (errorConfirmacion) {
+      await supabase
+        .from("ventas")
+        .update({
+          estado_pago: "pagado",
+          estado: "cancelada",
+          mercadopago_payment_id: paymentId,
+          notas: `REQUIERE REEMBOLSO MANUAL: Pago recibido (ID: ${paymentId ?? "desconocido"}) pero el stock era insuficiente al confirmar. Error: ${errorConfirmacion.message}`,
+        })
+        .eq("id", ventaId);
+
+      console.error(
+        `[Webhook MP] confirmar_venta falló para venta ${ventaId}. Marcada para reembolso. Error: ${errorConfirmacion.message}`
+      );
+      return NextResponse.json({ ok: true });
+    }
+
     // 5. Notificaciones (Email)
-    const { data: items } = await supabase
+    const { data: itemsRaw } = await supabase
       .from("venta_items")
       .select("*, productos(nombre)")
       .eq("venta_id", ventaId);
 
-    const clienteEmail = (venta as any).users?.email;
-    const clienteNombre = (venta as any).users?.nombre_completo ?? "Cliente";
+    const items = itemsRaw as VentaItemConProducto[] | null;
+
+    const clienteEmail = venta.users?.email;
+    const clienteNombre = venta.users?.nombre_completo ?? "Cliente";
 
     if (clienteEmail && items) {
       await enviarEmailCompraConfirmada({
@@ -96,7 +122,7 @@ export async function POST(request: Request) {
         clienteNombre,
         ventaId,
         items: items.map((i) => ({
-          nombre: (i as any).productos?.nombre ?? "Producto",
+          nombre: i.productos?.nombre ?? "Producto",
           cantidad: i.cantidad,
           precio_unitario: i.precio_unitario,
           subtotal: i.subtotal,
@@ -106,16 +132,18 @@ export async function POST(request: Request) {
     }
 
     // 6. Alertas de Stock
-    const { data: alertasNuevas } = await supabase
+    const { data: alertasRaw } = await supabase
       .from("stock_alerts")
       .select("*, productos(nombre)")
       .eq("resuelto", false)
       .eq("leido", false)
       .limit(5);
 
+    const alertasNuevas = alertasRaw as StockAlertConProducto[] | null;
+
     for (const alerta of alertasNuevas ?? []) {
       await enviarEmailAlertaStock({
-        productoNombre: (alerta as any).productos?.nombre ?? "Producto",
+        productoNombre: alerta.productos?.nombre ?? "Producto",
         stockActual: alerta.stock_actual,
         stockMinimo: alerta.stock_minimo,
       });

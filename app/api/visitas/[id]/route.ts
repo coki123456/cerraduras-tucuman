@@ -1,15 +1,15 @@
-// @ts-nocheck
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { esquemaVisita } from "@/lib/validations/visita";
 import { z } from "zod";
-import type { RouteContext } from "next/server";
+import type { Rol } from "@/types/database";
 
-export async function GET(
-  _request: Request,
-  ctx: RouteContext<"/api/visitas/[id]">
-) {
-  const { id } = await ctx.params;
+type Props = { params: Promise<{ id: string }> };
+// Cast necesario: supabase-js no infiere correctamente select("columna") con el genérico Database
+type PerfilRol = { role: Rol };
+
+export async function GET(_request: Request, { params }: Props) {
+  const { id } = await params;
   const supabase = await createClient();
 
   const {
@@ -18,6 +18,19 @@ export async function GET(
 
   if (!user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // Verificar rol antes de consultar la visita
+  const { data: perfilRaw } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  const perfil = perfilRaw as PerfilRol | null;
+
+  // Los clientes NO tienen acceso a las visitas de la empresa
+  if (perfil?.role !== "admin" && perfil?.role !== "empleado") {
+    return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
   }
 
   const { data, error } = await supabase
@@ -30,13 +43,8 @@ export async function GET(
     return NextResponse.json({ error: "Visita no encontrada" }, { status: 404 });
   }
 
-  const { data: perfil } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (perfil?.role === "empleado" && data.created_by !== user.id) {
+  // Los empleados solo pueden ver sus propias visitas
+  if (perfil.role === "empleado" && data.created_by !== user.id) {
     return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
   }
 
@@ -49,11 +57,8 @@ const esquemaActualizacion = esquemaVisita.partial().extend({
     .optional(),
 });
 
-export async function PUT(
-  request: Request,
-  ctx: RouteContext<"/api/visitas/[id]">
-) {
-  const { id } = await ctx.params;
+export async function PUT(request: Request, { params }: Props) {
+  const { id } = await params;
   const supabase = await createClient();
 
   const {
@@ -64,7 +69,18 @@ export async function PUT(
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  // Verificar que la visita existe y el usuario tiene permisos
+  // Verificar rol antes de cualquier otra operación
+  const { data: perfilRaw } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  const perfil = perfilRaw as PerfilRol | null;
+
+  if (perfil?.role !== "admin" && perfil?.role !== "empleado") {
+    return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
+  }
+
   const { data: visitaExistente } = await supabase
     .from("visitas")
     .select("created_by")
@@ -75,25 +91,17 @@ export async function PUT(
     return NextResponse.json({ error: "Visita no encontrada" }, { status: 404 });
   }
 
-  const { data: perfil } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (
-    perfil?.role === "empleado" &&
-    visitaExistente.created_by !== user.id
-  ) {
+  // Los empleados solo pueden editar sus propias visitas
+  if (perfil.role === "empleado" && visitaExistente.created_by !== user.id) {
     return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
   }
 
-  const body = await request.json();
+  const body = await request.json() as unknown;
   const parsed = esquemaActualizacion.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0].message },
+      { error: parsed.error.issues[0].message },
       { status: 400 }
     );
   }
@@ -112,11 +120,8 @@ export async function PUT(
   return NextResponse.json(data);
 }
 
-export async function DELETE(
-  _request: Request,
-  ctx: RouteContext<"/api/visitas/[id]">
-) {
-  const { id } = await ctx.params;
+export async function DELETE(_request: Request, { params }: Props) {
+  const { id } = await params;
   const supabase = await createClient();
 
   const {
@@ -127,11 +132,12 @@ export async function DELETE(
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const { data: perfil } = await supabase
+  const { data: perfilRaw } = await supabase
     .from("users")
     .select("role")
     .eq("id", user.id)
     .single();
+  const perfil = perfilRaw as PerfilRol | null;
 
   if (perfil?.role !== "admin") {
     return NextResponse.json({ error: "Solo el admin puede eliminar visitas" }, { status: 403 });

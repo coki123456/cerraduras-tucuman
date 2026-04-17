@@ -321,3 +321,21 @@ export type EstadoVisita =
 export type EstadoVenta = "pendiente" | "confirmada" | "cancelada";
 export type EstadoPago = "pendiente" | "pagado" | "rechazado";
 export type EstadoCompra = "en_proceso" | "en_preparacion" | "lista_para_retirar" | "despachado" | "finalizado";
+
+// Tipos compuestos para joins — eliminan la necesidad de `as any`
+export type VentaConCliente = Venta & {
+  users: Pick<Usuario, "email" | "nombre_completo" | "telefono"> | null;
+};
+
+export type VentaItemConProducto = VentaItem & {
+  productos: Pick<Producto, "nombre" | "sku"> | null;
+};
+
+export type VentaConDetalles = Venta & {
+  users: Pick<Usuario, "email" | "nombre_completo"> | null;
+  venta_items: VentaItemConProducto[];
+};
+
+export type StockAlertConProducto = StockAlert & {
+  productos: Pick<Producto, "nombre"> | null;
+};

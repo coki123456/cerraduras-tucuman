@@ -48,8 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setSesion({
           user,
-          role: ((perfil as any)?.role as Rol) ?? null,
-          nombreCompleto: (perfil as any)?.nombre_completo ?? null,
+          role: perfil?.role ?? null,
+          nombreCompleto: perfil?.nombre_completo ?? null,
           cargando: false,
         });
       } else {
@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           setSesion({
             user: session.user,
-            role: ((perfil as any)?.role as Rol) ?? null,
-            nombreCompleto: (perfil as any)?.nombre_completo ?? null,
+            role: perfil?.role ?? null,
+            nombreCompleto: perfil?.nombre_completo ?? null,
             cargando: false,
           });
         } else {

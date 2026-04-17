@@ -1,48 +1,57 @@
-// @ts-nocheck
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { InsigniaEstadoVenta } from "@/components/ventas/InsigniaEstadoVenta";
+import { Card, CardContent } from "@/components/ui/card";
 import { InsigniaEstadoPago } from "@/components/ventas/InsigniaEstadoPago";
 import { InsigniaEstadoCompra } from "@/components/ventas/InsigniaEstadoCompra";
 import { formatARS, formatFechaHora } from "@/lib/utils";
-import { ShoppingBag, Search, Filter, ArrowRight } from "lucide-react";
+import { ShoppingBag, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { VentaConCliente, Rol } from "@/types/database";
 
-export default async function PaginaVentasAdmin() {
+type PerfilRol = { role: Rol };
+
+const LIMITE = 50;
+
+export default async function PaginaVentasAdmin({
+  searchParams,
+}: {
+  searchParams: Promise<{ pagina?: string }>;
+}) {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Verificar que sea admin
-  const { data: profile } = await supabase
+  const { data: profileRaw } = await supabase
     .from("users")
     .select("role")
     .eq("id", user.id)
     .single();
+  const profile = profileRaw as PerfilRol | null;
 
-  if (profile?.role !== "admin") {
-    redirect("/dashboard");
-  }
+  if (profile?.role !== "admin") redirect("/dashboard");
 
-  // Obtener todas las ventas con información del cliente
-  const { data: ventas } = await supabase
+  const { pagina: paginaStr } = await searchParams;
+  const pagina = Math.max(1, parseInt(paginaStr ?? "1"));
+  const desde = (pagina - 1) * LIMITE;
+
+  const { data: ventasRaw, count } = await supabase
     .from("ventas")
-    .select(`
-      *,
-      users(nombre_completo, email, telefono)
-    `)
-    .order("fecha_compra", { ascending: false });
+    .select("*, users(nombre_completo, email, telefono)", { count: "exact" })
+    .order("fecha_compra", { ascending: false })
+    .range(desde, desde + LIMITE - 1);
+
+  const ventas = (ventasRaw ?? []) as VentaConCliente[];
+  const totalPaginas = Math.ceil((count ?? 0) / LIMITE);
 
   return (
     <div className="space-y-6">
@@ -53,18 +62,17 @@ export default async function PaginaVentasAdmin() {
             Monitoreo en tiempo real de todos los pedidos y pagos del sistema.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {/* Aquí podrían ir filtros rápidos en el futuro */}
           <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-medium border border-primary/20">
-            Total ventas: {ventas?.length || 0}
+            Total ventas: {count ?? 0}
           </div>
         </div>
       </div>
 
       <Card className="border-border/50">
         <CardContent className="p-0">
-          {!ventas || ventas.length === 0 ? (
+          {ventas.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
               <ShoppingBag className="h-10 w-10 opacity-20" />
               <p>No se encontraron ventas registradas.</p>
@@ -91,10 +99,10 @@ export default async function PaginaVentasAdmin() {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium">
-                          {(venta.users as any)?.nombre_completo || "Usuario Desconocido"}
+                          {venta.users?.nombre_completo ?? "Usuario Desconocido"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {(venta.users as any)?.email}
+                          {venta.users?.email}
                         </span>
                       </div>
                     </TableCell>
@@ -125,6 +133,29 @@ export default async function PaginaVentasAdmin() {
           )}
         </CardContent>
       </Card>
+
+      {/* Paginación */}
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Página {pagina} de {totalPaginas} · {count} ventas en total
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild disabled={pagina <= 1}>
+              <Link href={`?pagina=${pagina - 1}`}>
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild disabled={pagina >= totalPaginas}>
+              <Link href={`?pagina=${pagina + 1}`}>
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

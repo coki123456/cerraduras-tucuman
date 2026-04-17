@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
   if (!validacion.success) {
     return NextResponse.json(
-      { error: validacion.error.errors[0].message },
+      { error: validacion.error.issues[0].message },
       { status: 400 }
     );
   }
