@@ -105,11 +105,11 @@ export function AccionesVisita({ visita, role }: AccionesVisitaProps) {
 
       {role === "admin" && (
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" className="text-destructive hover:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Eliminar
-            </Button>
+          <AlertDialogTrigger
+            render={<Button variant="ghost" className="text-destructive hover:text-destructive" />}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Eliminar
           </AlertDialogTrigger>
 
           <AlertDialogContent>

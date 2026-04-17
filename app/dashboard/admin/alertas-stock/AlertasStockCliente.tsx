@@ -121,16 +121,18 @@ export function AlertasStockCliente({ alertas }: { alertas: Alerta[] }) {
                 )}
 
                 <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/10"
-                      disabled={resolviendo === alerta.id}
-                    >
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      <span className="sr-only">Resolver</span>
-                    </Button>
+                  <AlertDialogTrigger
+                    render={
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/10"
+                        disabled={resolviendo === alerta.id}
+                      />
+                    }
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only">Resolver</span>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
