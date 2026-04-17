@@ -50,16 +50,18 @@ export async function PUT(request: Request, { params }: Props) {
     );
   }
 
-  // Cast necesario: Zod infiere `string | undefined` para campos opcionales, pero el tipo
-  // Update de Supabase espera `string | null | undefined`. Los valores son correctos.
-  const payload = {
+  // supabase-js infiere `never` para el param de update() cuando el tipo Update tiene
+  // discrepancias con Zod (string vs string|null). El cast a `TablesUpdate` es seguro
+  // porque los datos ya fueron validados por Zod.
+  const payload: TablesUpdate<"productos"> = {
     ...validacion.data,
     updated_at: new Date().toISOString(),
-  } as TablesUpdate<"productos">;
+  };
 
   const { data, error } = await supabase
     .from("productos")
-    .update(payload)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(payload as any)
     .eq("id", id)
     .select()
     .single();
@@ -94,7 +96,8 @@ export async function DELETE(_req: Request, { params }: Props) {
   // Soft delete: marcar inactivo
   const { error } = await supabase
     .from("productos")
-    .update({ activo: false, updated_at: new Date().toISOString() } as TablesUpdate<"productos">)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ activo: false, updated_at: new Date().toISOString() } as any)
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
