@@ -40,26 +40,20 @@ WORKDIR /app
 # Variables de entorno para runtime
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-
-# Los secretos se inyectan en runtime via docker-compose environment:
-# - MERCADOPAGO_ACCESS_TOKEN
-# - MERCADOPAGO_WEBHOOK_SECRET
-# - SUPABASE_SERVICE_ROLE_KEY
-# - BREVO_API_KEY
-# - CRON_SECRET
+ENV PORT=8080
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 nextjs && \
+    apk add --no-cache curl
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 USER nextjs
-EXPOSE 3000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+    CMD curl -f http://localhost:8080/api/health || exit 1
 
 CMD ["node", "server.js"]
