@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Package } from "lucide-react";
+import { Package, Lock, Wrench, Search, X } from "lucide-react";
 import { TarjetaProducto } from "@/components/productos/TarjetaProducto";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Producto, CategoriaProducto } from "@/types/database";
 import { ETIQUETAS_CATEGORIA } from "@/lib/utils";
 
@@ -14,15 +15,21 @@ interface CatalogoPublicoProps {
 
 const CATEGORIAS: CategoriaProducto[] = ["cerraduras", "herrajes", "accesorios"];
 
+const ICONOS_CATEGORIA: Record<CategoriaProducto, React.ReactNode> = {
+  cerraduras: <Lock className="h-12 w-12" />,
+  herrajes: <Wrench className="h-12 w-12" />,
+  accesorios: <Package className="h-12 w-12" />,
+};
+
+const GRADIENTES: Record<CategoriaProducto, string> = {
+  cerraduras: "from-blue-500 to-slate-600",
+  herrajes: "from-orange-500 to-amber-600",
+  accesorios: "from-green-500 to-emerald-600",
+};
+
 export function CatalogoPublico({ productos }: CatalogoPublicoProps) {
   const [busqueda, setBusqueda] = useState("");
-  const [categoriasExpandidas, setCategoriasExpandidas] = useState<
-    Record<CategoriaProducto, boolean>
-  >({
-    cerraduras: true,
-    herrajes: true,
-    accesorios: true,
-  });
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaProducto | null>(null);
 
   const productosPorCategoria = useMemo(() => {
     return CATEGORIAS.reduce(
@@ -41,104 +48,134 @@ export function CatalogoPublico({ productos }: CatalogoPublicoProps) {
     );
   }, [productos, busqueda]);
 
-  const totalProductos = Object.values(productosPorCategoria).reduce(
-    (sum, prods) => sum + prods.length,
-    0
-  );
+  const productosResultado = useMemo(() => {
+    if (busqueda === "") return [];
+    return CATEGORIAS.flatMap((cat) => productosPorCategoria[cat]);
+  }, [productosPorCategoria, busqueda]);
 
-  const toggleCategoria = (cat: CategoriaProducto) => {
-    setCategoriasExpandidas((prev) => ({
-      ...prev,
-      [cat]: !prev[cat],
-    }));
-  };
+  // Si hay búsqueda activa, mostrar resultados de todas las categorías
+  const mostrarResultados = busqueda !== "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Encabezado */}
       <div>
         <h2 className="text-2xl font-bold">Nuestros productos</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {totalProductos} producto
-          {totalProductos !== 1 ? "s" : ""} disponibles
-        </p>
       </div>
 
-      {/* Búsqueda */}
-      <div className="max-w-sm">
+      {/* Búsqueda mejorada */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por nombre o SKU..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="h-10"
+          className="pl-9 pr-9 h-10"
         />
+        {busqueda && (
+          <button
+            onClick={() => setBusqueda("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      {/* Categorías y productos */}
-      <div className="space-y-6">
-        {CATEGORIAS.map((categoria) => {
-          const productosCategoria = productosPorCategoria[categoria];
-          const estaExpandida = categoriasExpandidas[categoria];
+      {/* Vista de resultados (búsqueda activa) */}
+      {mostrarResultados && (
+        <div className="space-y-6">
+          {productosResultado.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+              <Package className="h-10 w-10" />
+              <p className="text-sm">No se encontraron productos</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {productosResultado.length} resultado{productosResultado.length !== 1 ? "s" : ""}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {productosResultado.map((producto) => (
+                  <TarjetaProducto key={producto.id} producto={producto} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-          return (
-            <div key={categoria} className="space-y-3">
-              {/* Header de categoría */}
-              <button
-                onClick={() => toggleCategoria(categoria)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+      {/* Vista de categorías (sin búsqueda) */}
+      {!mostrarResultados && (
+        <>
+          {/* Si hay una categoría seleccionada, mostrar productos de esa categoría */}
+          {categoriaSeleccionada ? (
+            <div className="space-y-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCategoriaSeleccionada(null)}
+                className="gap-2"
               >
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-semibold capitalize">
-                    {ETIQUETAS_CATEGORIA[categoria]}
-                  </h3>
-                  <span className="text-xs font-medium text-muted-foreground bg-muted rounded-full px-2 py-1">
-                    {productosCategoria.length}
-                  </span>
-                </div>
-                <svg
-                  className={`h-5 w-5 text-muted-foreground transition-transform ${
-                    estaExpandida ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                  />
-                </svg>
-              </button>
+                ← Volver a categorías
+              </Button>
 
-              {/* Grid de productos */}
-              {estaExpandida && (
-                <div>
-                  {productosCategoria.length === 0 ? (
-                    <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground rounded-lg bg-muted/20">
-                      <Package className="h-10 w-10" />
-                      <p className="text-sm">No hay productos en esta categoría</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {productosCategoria.map((producto) => (
-                        <TarjetaProducto key={producto.id} producto={producto} />
-                      ))}
-                    </div>
-                  )}
+              <h3 className="text-xl font-semibold capitalize">
+                {ETIQUETAS_CATEGORIA[categoriaSeleccionada]}
+              </h3>
+
+              {productosPorCategoria[categoriaSeleccionada].length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground rounded-lg bg-muted/20">
+                  <Package className="h-10 w-10" />
+                  <p className="text-sm">No hay productos en esta categoría</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {productosPorCategoria[categoriaSeleccionada].map((producto) => (
+                    <TarjetaProducto key={producto.id} producto={producto} />
+                  ))}
                 </div>
               )}
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            /* Grid de Cards de categorías */
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {CATEGORIAS.map((categoria) => (
+                <button
+                  key={categoria}
+                  onClick={() => setCategoriaSeleccionada(categoria)}
+                  className="group"
+                >
+                  <Card className="border-border/50 overflow-hidden hover:shadow-lg transition-shadow h-full">
+                    {/* Fondo con gradiente e icono */}
+                    <div
+                      className={`bg-gradient-to-br ${GRADIENTES[categoria]} h-40 flex items-center justify-center text-white relative overflow-hidden`}
+                    >
+                      {/* Icono */}
+                      <div className="relative z-10 opacity-90 group-hover:opacity-100 transition-opacity">
+                        {ICONOS_CATEGORIA[categoria]}
+                      </div>
 
-      {/* Sin resultados */}
-      {totalProductos === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-          <Package className="h-10 w-10" />
-          <p className="text-sm">No se encontraron productos</p>
-        </div>
+                      {/* Overlay decorativo */}
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+                    </div>
+
+                    {/* Contenido */}
+                    <CardContent className="pt-6 pb-6">
+                      <h3 className="text-lg font-semibold capitalize text-foreground">
+                        {ETIQUETAS_CATEGORIA[categoria]}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {productosPorCategoria[categoria].length} producto
+                        {productosPorCategoria[categoria].length !== 1 ? "s" : ""}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

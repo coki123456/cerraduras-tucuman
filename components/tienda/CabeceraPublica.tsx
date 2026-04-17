@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 
 export function CabeceraPublica() {
   const { totalItems } = useCarrito();
-  const { role, cargando, cerrarSesion } = useAuth();
+  const { role, cargando, cerrarSesion, nombreCompleto } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -33,6 +33,11 @@ export function CabeceraPublica() {
                     )}
                     <span className="hidden sm:inline">Carrito</span>
                     {totalItems > 0 && <span className="sm:hidden">({totalItems})</span>}
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/dashboard/perfil">
+                    {nombreCompleto}
                   </Link>
                 </Button>
                 <Button size="sm" variant="outline" onClick={cerrarSesion}>Salir</Button>

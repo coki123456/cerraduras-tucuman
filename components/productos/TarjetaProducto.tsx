@@ -94,9 +94,9 @@ export function TarjetaProducto({ producto }: TarjetaProductoProps) {
                 asChild
                 disabled={producto.stock === 0}
               >
-                <Link href="/login">
+                <Link href={`/productos/${producto.id}`}>
                   <ShoppingCart className="h-4 w-4" />
-                  {producto.stock === 0 ? "Sin stock" : "Agregar"}
+                  {producto.stock === 0 ? "Sin stock" : "Ver detalles"}
                 </Link>
               </Button>
             )}
