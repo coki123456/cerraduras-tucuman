@@ -52,7 +52,7 @@ export function FiltrosProductos({ busquedaActual, categoriaActual }: FiltrosPro
 
       <Select
         defaultValue={categoriaActual}
-        onValueChange={(v) => actualizarUrl(busquedaActual, v)}
+        onValueChange={(v) => actualizarUrl(busquedaActual, v ?? "")}
       >
         <SelectTrigger className="w-full sm:w-44">
           <SelectValue placeholder="Categoría" />
