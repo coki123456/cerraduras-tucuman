@@ -127,7 +127,8 @@ export function Encabezado() {
               className="text-destructive focus:text-destructive"
               onClick={async () => {
                 await cerrarSesion();
-                router.push("/login");
+                router.push("/");
+                router.refresh();
               }}
             >
               Cerrar sesión

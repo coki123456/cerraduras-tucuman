@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -25,7 +26,7 @@ interface AuthContextValue extends SesionUsuario {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [sesion, setSesion] = useState<SesionUsuario>({
     user: null,
     role: null,
@@ -61,22 +62,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          const { data: perfil } = await supabase
-            .from("users")
-            .select("role, nombre_completo")
-            .eq("id", session.user.id)
-            .single();
-
-          setSesion({
-            user: session.user,
-            role: perfil?.role ?? null,
-            nombreCompleto: perfil?.nombre_completo ?? null,
-            cargando: false,
-          });
-        } else {
+        if (event === "SIGNED_OUT" || !session?.user) {
           setSesion({ user: null, role: null, nombreCompleto: null, cargando: false });
+          return;
         }
+
+        const { data: perfil } = await supabase
+          .from("users")
+          .select("role, nombre_completo")
+          .eq("id", session.user.id)
+          .single();
+
+        setSesion({
+          user: session.user,
+          role: perfil?.role ?? null,
+          nombreCompleto: perfil?.nombre_completo ?? null,
+          cargando: false,
+        });
       }
     );
 

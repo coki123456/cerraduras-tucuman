@@ -152,7 +152,8 @@ export function BarraLateral() {
           className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
           onClick={async () => {
             await cerrarSesion();
-            router.push("/login");
+            router.push("/");
+            router.refresh();
           }}
         >
           <LogOut className="h-4 w-4" />

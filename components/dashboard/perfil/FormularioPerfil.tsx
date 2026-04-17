@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,35 +10,34 @@ import { toast } from "sonner";
 import { Loader2, User, Phone, MapPin, Building2, Globe } from "lucide-react";
 import type { Usuario } from "@/types/database";
 
-export function FormularioPerfil() {
+interface FormularioPerfilProps {
+  initialData: Usuario | null;
+}
+
+export function FormularioPerfil({ initialData }: FormularioPerfilProps) {
   const supabase = createClient();
-  const [perfil, setPerfil] = useState<Usuario | null>(null);
-  const [cargando, setCargando] = useState(true);
+  const [perfil, setPerfil] = useState<Usuario | null>(initialData);
   const [guardando, setGuardando] = useState(false);
 
-  useEffect(() => {
-    async function cargarPerfil() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        setPerfil(data);
-      }
-      setCargando(false);
-    }
-    cargarPerfil();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!perfil) {
+    return (
+      <Card className="max-w-2xl border-border/50">
+        <CardContent className="flex items-center justify-center p-8">
+          <p className="text-muted-foreground text-sm">
+            No se encontró información de perfil. Contactá al administrador.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!perfil) return;
 
     setGuardando(true);
-    const { error } = await (supabase
-      .from("users") as any)
+    const { error } = await supabase
+      .from("users")
       .update({
         nombre_completo: perfil.nombre_completo,
         telefono: perfil.telefono,
@@ -55,14 +54,6 @@ export function FormularioPerfil() {
     } else {
       toast.success("Perfil actualizado correctamente");
     }
-  }
-
-  if (cargando) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
   }
 
   return (
@@ -86,7 +77,7 @@ export function FormularioPerfil() {
                 <Input
                   id="nombre_completo"
                   className="pl-9"
-                  value={perfil?.nombre_completo || ""}
+                  value={perfil.nombre_completo || ""}
                   onChange={(e) => setPerfil(p => p ? { ...p, nombre_completo: e.target.value } : null)}
                   required
                 />
@@ -101,7 +92,7 @@ export function FormularioPerfil() {
                   id="telefono"
                   className="pl-9"
                   placeholder="+54 381 000-0000"
-                  value={perfil?.telefono || ""}
+                  value={perfil.telefono || ""}
                   onChange={(e) => setPerfil(p => p ? { ...p, telefono: e.target.value } : null)}
                 />
               </div>
@@ -115,7 +106,7 @@ export function FormularioPerfil() {
                   id="direccion"
                   className="pl-9"
                   placeholder="Calle, Número, Piso/Dpto"
-                  value={perfil?.direccion || ""}
+                  value={perfil.direccion || ""}
                   onChange={(e) => setPerfil(p => p ? { ...p, direccion: e.target.value } : null)}
                 />
               </div>
@@ -129,7 +120,7 @@ export function FormularioPerfil() {
                   id="ciudad"
                   className="pl-9"
                   placeholder="San Miguel de Tucumán"
-                  value={perfil?.ciudad || ""}
+                  value={perfil.ciudad || ""}
                   onChange={(e) => setPerfil(p => p ? { ...p, ciudad: e.target.value } : null)}
                 />
               </div>
@@ -142,7 +133,7 @@ export function FormularioPerfil() {
                 <Input
                   id="empresa"
                   className="pl-9"
-                  value={perfil?.empresa || ""}
+                  value={perfil.empresa || ""}
                   onChange={(e) => setPerfil(p => p ? { ...p, empresa: e.target.value } : null)}
                 />
               </div>
