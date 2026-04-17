@@ -48,6 +48,7 @@ export type Database = {
           ciudad?: string | null;
           activo?: boolean;
         };
+        Relationships: [];
       };
       productos: {
         Row: {
@@ -92,6 +93,7 @@ export type Database = {
           activo?: boolean;
           updated_at?: string;
         };
+        Relationships: [];
       };
       visitas: {
         Row: {
@@ -133,6 +135,7 @@ export type Database = {
           notas?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       ventas: {
         Row: {
@@ -177,6 +180,7 @@ export type Database = {
           notas?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       venta_items: {
         Row: {
@@ -198,6 +202,7 @@ export type Database = {
           created_at?: string;
         };
         Update: never;
+        Relationships: [];
       };
       stock_alerts: {
         Row: {
@@ -224,6 +229,7 @@ export type Database = {
           leido?: boolean;
           resuelto?: boolean;
         };
+        Relationships: [];
       };
       admin_settings: {
         Row: {
@@ -245,6 +251,7 @@ export type Database = {
           updated_at?: string;
           updated_by?: string;
         };
+        Relationships: [];
       };
       mercadopago_config: {
         Row: {
@@ -268,10 +275,15 @@ export type Database = {
           public_key?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
     Functions: {
+      confirmar_venta: {
+        Args: { p_venta_id: string; p_payment_id: string | null; p_admin_id: string };
+        Returns: void;
+      };
       decrement_stock: {
         Args: { p_producto_id: string; p_cantidad: number };
         Returns: number;

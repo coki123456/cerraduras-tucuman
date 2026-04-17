@@ -108,8 +108,7 @@ export async function PUT(request: Request, { params }: Props) {
 
   const { data, error } = await supabase
     .from("visitas")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .update({ ...parsed.data, notas: parsed.data.notas ?? null } as any)
+    .update({ ...parsed.data, notas: parsed.data.notas ?? null })
     .eq("id", id)
     .select()
     .single();

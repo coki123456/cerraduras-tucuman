@@ -60,8 +60,7 @@ export async function PUT(request: Request, { params }: Props) {
 
   const { data, error } = await supabase
     .from("productos")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .update(payload as any)
+    .update(payload)
     .eq("id", id)
     .select()
     .single();
@@ -96,8 +95,7 @@ export async function DELETE(_req: Request, { params }: Props) {
   // Soft delete: marcar inactivo
   const { error } = await supabase
     .from("productos")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .update({ activo: false, updated_at: new Date().toISOString() } as any)
+    .update({ activo: false, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

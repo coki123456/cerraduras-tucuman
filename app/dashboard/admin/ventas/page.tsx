@@ -50,7 +50,7 @@ export default async function PaginaVentasAdmin({
     .order("fecha_compra", { ascending: false })
     .range(desde, desde + LIMITE - 1);
 
-  const ventas = (ventasRaw ?? []) as VentaConCliente[];
+  const ventas = (ventasRaw ?? []) as unknown as VentaConCliente[];
   const totalPaginas = Math.ceil((count ?? 0) / LIMITE);
 
   return (

@@ -50,9 +50,8 @@ export async function POST(request: Request) {
       const orden = await obtenerOrdenMercante(String(dataId));
       if (orden.status === "closed" || orden.order_status === "paid") {
         ventaId = orden.external_reference as string;
-        const pagoAprobado = (orden.payments as Array<{ status: string; id: string }>)
-          ?.find((p) => p.status === "approved");
-        paymentId = pagoAprobado ? String(pagoAprobado.id) : null;
+        const pagoAprobado = orden.payments?.find((p) => p.status === "approved");
+        paymentId = pagoAprobado?.id != null ? String(pagoAprobado.id) : null;
       }
     }
 
