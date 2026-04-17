@@ -37,8 +37,8 @@ export function FormularioPerfil() {
     if (!perfil) return;
 
     setGuardando(true);
-    const { error } = await supabase
-      .from("users")
+    const { error } = await (supabase
+      .from("users") as any)
       .update({
         nombre_completo: perfil.nombre_completo,
         telefono: perfil.telefono,

@@ -41,9 +41,9 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<ProductoInput>({
-    resolver: zodResolver(schemaProducto),
-    defaultValues: producto
+  } = useForm({
+    resolver: zodResolver(schemaProducto) as any,
+    defaultValues: (producto
       ? {
           nombre: producto.nombre,
           descripcion: producto.descripcion ?? "",
@@ -60,7 +60,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
           stock_minimo: 5,
           activo: true,
           imagen_url: null,
-        },
+        }) as any,
   });
 
   const nombre = watch("nombre");
@@ -124,7 +124,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
               {...register("nombre")}
             />
             {errors.nombre && (
-              <p className="text-xs text-destructive">{errors.nombre.message}</p>
+              <p className="text-xs text-destructive">{String(errors.nombre?.message || "")}</p>
             )}
           </div>
 
@@ -152,7 +152,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
                 {...register("precio", { valueAsNumber: true })}
               />
               {errors.precio && (
-                <p className="text-xs text-destructive">{errors.precio.message}</p>
+                <p className="text-xs text-destructive">{String(errors.precio?.message || "")}</p>
               )}
             </div>
 
@@ -174,7 +174,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
                 </SelectContent>
               </Select>
               {errors.categoria && (
-                <p className="text-xs text-destructive">{errors.categoria.message}</p>
+                <p className="text-xs text-destructive">{String(errors.categoria?.message || "")}</p>
               )}
             </div>
           </div>
@@ -191,7 +191,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
                 {...register("stock", { valueAsNumber: true })}
               />
               {errors.stock && (
-                <p className="text-xs text-destructive">{errors.stock.message}</p>
+                <p className="text-xs text-destructive">{String(errors.stock?.message || "")}</p>
               )}
             </div>
 
@@ -227,7 +227,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
               </Button>
             </div>
             {errors.sku && (
-              <p className="text-xs text-destructive">{errors.sku.message}</p>
+              <p className="text-xs text-destructive">{String(errors.sku?.message || "")}</p>
             )}
           </div>
 

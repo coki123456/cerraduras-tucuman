@@ -52,11 +52,11 @@ export async function POST(req: NextRequest) {
 
     if (configExistente) {
       // Actualizar
-      const { error } = await supabase
-        .from("mercadopago_config")
+      const { error } = await (supabase
+        .from("mercadopago_config") as any)
         .update({
           access_token: validationResult.data.access_token,
-          public_key: validationResult.data.public_key,
+          public_key: validationResult.data.public_key ?? null,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.id);
@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // Crear
-      const { error } = await supabase
-        .from("mercadopago_config")
+      const { error } = await (supabase
+        .from("mercadopago_config") as any)
         .insert({
           user_id: user.id,
           access_token: validationResult.data.access_token,

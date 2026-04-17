@@ -16,8 +16,8 @@ async function getAccessToken(): Promise<string> {
 
     if (user) {
       // Buscar configuración del admin
-      const { data: config } = await supabase
-        .from("mercadopago_config")
+      const { data: config } = await (supabase
+        .from("mercadopago_config") as any)
         .select("access_token")
         .eq("user_id", user.id)
         .single();
@@ -90,7 +90,11 @@ export async function obtenerPago(paymentId: string) {
 }
 
 export async function obtenerOrdenMercante(orderId: string) {
-  const order = new MerchantOrder(getClient());
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error("No hay configuración de MercadoPago.");
+  }
+  const order = new MerchantOrder(getClientWithToken(token));
   return order.get({ merchantOrderId: orderId });
 }
 

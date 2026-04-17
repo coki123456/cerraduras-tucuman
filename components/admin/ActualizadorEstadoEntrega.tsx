@@ -37,8 +37,8 @@ export function ActualizadorEstadoEntrega({
     setActualizando(true);
     try {
       // Actualizar estado
-      const { error: updateError } = await supabase
-        .from("ventas")
+      const { error: updateError } = await (supabase
+        .from("ventas") as any)
         .update({
           estado: "entregado",
           fecha_entrega: new Date().toISOString(),
@@ -71,8 +71,8 @@ export function ActualizadorEstadoEntrega({
   async function marcarEnviada() {
     setActualizando(true);
     try {
-      const { error: updateError } = await supabase
-        .from("ventas")
+      const { error: updateError } = await (supabase
+        .from("ventas") as any)
         .update({
           estado: "enviado",
           fecha_entrega: new Date().toISOString(),
@@ -94,7 +94,7 @@ export function ActualizadorEstadoEntrega({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger>
         <Button variant="ghost" size="sm" disabled={actualizando}>
           {actualizando ? (
             <Loader2 className="h-4 w-4 animate-spin" />

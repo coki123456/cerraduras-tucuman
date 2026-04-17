@@ -140,10 +140,11 @@ export type Database = {
           cliente_id: string | null;
           fecha_compra: string;
           total_monto: number;
-          estado: "pendiente" | "confirmada" | "cancelada";
+          estado: "pendiente" | "confirmada" | "cancelada" | "entregado" | "enviado";
           metodo_pago: "mercadopago" | "efectivo";
           mercadopago_payment_id: string | null;
           mercadopago_preference_id: string | null;
+          fecha_entrega: string | null;
           notas: string | null;
           created_at: string;
           updated_at: string;
@@ -153,18 +154,20 @@ export type Database = {
           cliente_id?: string | null;
           fecha_compra?: string;
           total_monto: number;
-          estado?: "pendiente" | "confirmada" | "cancelada";
+          estado?: "pendiente" | "confirmada" | "cancelada" | "entregado";
           metodo_pago?: "mercadopago" | "efectivo";
           mercadopago_payment_id?: string | null;
           mercadopago_preference_id?: string | null;
+          fecha_entrega?: string | null;
           notas?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
-          estado?: "pendiente" | "confirmada" | "cancelada";
+          estado?: "pendiente" | "confirmada" | "cancelada" | "entregado";
           mercadopago_payment_id?: string | null;
           mercadopago_preference_id?: string | null;
+          fecha_entrega?: string | null;
           notas?: string | null;
           updated_at?: string;
         };
@@ -237,6 +240,29 @@ export type Database = {
           updated_by?: string;
         };
       };
+      mercadopago_config: {
+        Row: {
+          id: string;
+          user_id: string;
+          access_token: string;
+          public_key: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          access_token: string;
+          public_key?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          access_token?: string;
+          public_key?: string | null;
+          updated_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -277,6 +303,7 @@ export type Venta = Tables<"ventas">;
 export type VentaItem = Tables<"venta_items">;
 export type StockAlert = Tables<"stock_alerts">;
 export type AdminSetting = Tables<"admin_settings">;
+export type MercadopagoConfig = Tables<"mercadopago_config">;
 
 export type Rol = "cliente" | "empleado" | "admin";
 export type CategoriaProducto = "cerraduras" | "herrajes" | "accesorios";
