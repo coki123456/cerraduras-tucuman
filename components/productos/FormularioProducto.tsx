@@ -1,10 +1,9 @@
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { schemaProducto, type ProductoInput } from "@/lib/validations/producto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,6 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
     watch,
     formState: { errors, isSubmitting },
   } = useForm<ProductoInput>({
-    // @ts-ignore -- Zod v4 type incompatibility with react-hook-form
     resolver: zodResolver(schemaProducto),
     defaultValues: producto
       ? {
@@ -72,7 +70,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
     if (nombre) setValue("sku", generarSKU(nombre));
   }
 
-  async function onSubmit(data: ProductoInput) {
+  const onSubmit: SubmitHandler<ProductoInput> = async (data) => {
     setErrorServidor(null);
 
     const url =
@@ -99,7 +97,7 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
     );
     router.push("/dashboard/productos");
     router.refresh();
-  }
+  };
 
   return (
     <Card className="border-border/50 max-w-2xl">
@@ -110,7 +108,6 @@ export function FormularioProducto({ producto, modo }: FormularioProductoProps) 
       </CardHeader>
 
       <CardContent>
-        // @ts-ignore -- Zod v4 type incompatibility with SubmitHandler
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Imagen */}
           <SelectorImagen 

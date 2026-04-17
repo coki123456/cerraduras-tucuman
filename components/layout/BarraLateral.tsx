@@ -15,6 +15,7 @@ import {
   KeyRound,
   User,
   ShoppingBag,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -81,6 +82,12 @@ const enlaces: EnlaceNav[] = [
     href: "/dashboard/admin/alertas-stock",
     label: "Alertas de stock",
     icono: AlertTriangle,
+    roles: ["admin"],
+  },
+  {
+    href: "/dashboard/admin/configuracion",
+    label: "Configuración",
+    icono: Settings,
     roles: ["admin"],
   },
 ];

@@ -1,10 +1,37 @@
 import MercadoPagoConfig, { Preference, Payment, MerchantOrder } from "mercadopago";
 import crypto from "crypto";
+import { createClient } from "@/lib/supabase/server";
 
-function getClient() {
+function getClientWithToken(accessToken: string) {
   return new MercadoPagoConfig({
-    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
+    accessToken,
   });
+}
+
+// Función para obtener el token del admin (o usar el del .env como fallback)
+async function getAccessToken(): Promise<string> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      // Buscar configuración del admin
+      const { data: config } = await supabase
+        .from("mercadopago_config")
+        .select("access_token")
+        .eq("user_id", user.id)
+        .single();
+
+      if (config?.access_token) {
+        return config.access_token;
+      }
+    }
+  } catch (error) {
+    console.warn("No se pudo obtener token de MercadoPago del admin, usando fallback");
+  }
+
+  // Fallback a variable de entorno
+  return process.env.MERCADOPAGO_ACCESS_TOKEN || "";
 }
 
 interface ItemPreference {
@@ -19,7 +46,13 @@ export async function crearPreferenciaMP(
   ventaId: string,
   clienteEmail: string
 ) {
-  const preference = new Preference(getClient());
+  const token = await getAccessToken();
+
+  if (!token) {
+    throw new Error("No hay configuración de MercadoPago. Contacte al administrador.");
+  }
+
+  const preference = new Preference(getClientWithToken(token));
 
   const { id, init_point } = await preference.create({
     body: {
@@ -46,7 +79,13 @@ export async function crearPreferenciaMP(
 }
 
 export async function obtenerPago(paymentId: string) {
-  const payment = new Payment(getClient());
+  const token = await getAccessToken();
+
+  if (!token) {
+    throw new Error("No hay configuración de MercadoPago.");
+  }
+
+  const payment = new Payment(getClientWithToken(token));
   return payment.get({ id: paymentId });
 }
 
