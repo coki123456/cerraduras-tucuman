@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { InsigniaEstadoVenta } from "@/components/ventas/InsigniaEstadoVenta";
+import { InsigniaEstadoPago } from "@/components/ventas/InsigniaEstadoPago";
+import { InsigniaEstadoCompra } from "@/components/ventas/InsigniaEstadoCompra";
 import { formatARS, formatFechaHora } from "@/lib/utils";
 import { ArrowLeft, CreditCard } from "lucide-react";
 import type { RouteContext } from "next/server";
@@ -84,7 +86,10 @@ export default async function PaginaDetalleCompra(
             {formatFechaHora(venta.fecha_compra)}
           </p>
         </div>
-        <InsigniaEstadoVenta estado={venta.estado} />
+        <div className="flex gap-2">
+          <InsigniaEstadoPago estado={venta.estado_pago} />
+          <InsigniaEstadoCompra estado={venta.estado_compra} />
+        </div>
       </div>
 
       {/* Información del cliente (solo para admins) */}

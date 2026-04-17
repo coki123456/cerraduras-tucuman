@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,82 +9,60 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import { MapPin, Truck, Check, Loader2, MoreVertical } from "lucide-react";
+import { Loader2, MoreVertical, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ETIQUETAS_ESTADO_COMPRA } from "@/lib/utils";
+import type { EstadoCompra } from "@/types/database";
 
 interface ActualizadorEstadoEntregaProps {
   ventaId: string;
-  metodoEntrega: "local" | "envio";
+  estadoCompra: EstadoCompra;
   clienteNombre: string;
   clienteEmail: string;
   clienteTelefono: string;
 }
 
+const ESTADOS_COMPRA: EstadoCompra[] = [
+  "en_proceso",
+  "en_preparacion",
+  "lista_para_retirar",
+  "despachado",
+  "finalizado",
+];
+
 export function ActualizadorEstadoEntrega({
   ventaId,
-  metodoEntrega,
+  estadoCompra,
   clienteNombre,
   clienteEmail,
   clienteTelefono,
 }: ActualizadorEstadoEntregaProps) {
-  const supabase = createClient();
   const [actualizando, setActualizando] = useState(false);
 
-  async function marcarEntregada() {
+  async function cambiarEstado(nuevoEstado: EstadoCompra) {
     setActualizando(true);
     try {
-      // Actualizar estado
-      const { error: updateError } = await (supabase
-        .from("ventas") as any)
-        .update({
-          estado: "entregado",
-          fecha_entrega: new Date().toISOString(),
-        })
-        .eq("id", ventaId);
+      const response = await fetch(
+        `/api/admin/ventas/${ventaId}/estado-compra`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ estado_compra: nuevoEstado }),
+        }
+      );
 
-      if (updateError) {
-        toast.error("Error al marcar como entregado");
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || "Error al cambiar estado");
         return;
       }
 
-      // Aquí podrías enviar un email de notificación
-      // await fetch("/api/email/notificacion-entrega", {
-      //   method: "POST",
-      //   body: JSON.stringify({
-      //     clienteEmail,
-      //     clienteNombre,
-      //     ventaId,
-      //   }),
-      // });
-
-      toast.success(`Venta marcada como entregada al cliente ${clienteNombre}`);
+      toast.success(
+        `Estado actualizado a: ${ETIQUETAS_ESTADO_COMPRA[nuevoEstado]}`
+      );
     } catch (err) {
-      toast.error("Error inesperado");
-    } finally {
-      setActualizando(false);
-    }
-  }
-
-  async function marcarEnviada() {
-    setActualizando(true);
-    try {
-      const { error: updateError } = await (supabase
-        .from("ventas") as any)
-        .update({
-          estado: "enviado",
-          fecha_entrega: new Date().toISOString(),
-        })
-        .eq("id", ventaId);
-
-      if (updateError) {
-        toast.error("Error al marcar como enviado");
-        return;
-      }
-
-      toast.success(`Venta marcada como enviada a ${clienteNombre}`);
-    } catch (err) {
+      console.error(err);
       toast.error("Error inesperado");
     } finally {
       setActualizando(false);
@@ -104,32 +81,23 @@ export function ActualizadorEstadoEntrega({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Marcar estado de entrega</DropdownMenuLabel>
+        <DropdownMenuLabel>Cambiar estado de compra</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {metodoEntrega === "local" ? (
-          <>
-            <DropdownMenuCheckboxItem
-              onClick={marcarEntregada}
-              disabled={actualizando}
-              className="cursor-pointer"
-            >
-              <MapPin className="h-4 w-4 mr-2 text-orange-500" />
-              <span>Retirado en local</span>
-            </DropdownMenuCheckboxItem>
-          </>
-        ) : (
-          <>
-            <DropdownMenuCheckboxItem
-              onClick={marcarEnviada}
-              disabled={actualizando}
-              className="cursor-pointer"
-            >
-              <Truck className="h-4 w-4 mr-2 text-blue-500" />
-              <span>Marcado como enviado</span>
-            </DropdownMenuCheckboxItem>
-          </>
-        )}
+        {ESTADOS_COMPRA.map((estado) => (
+          <DropdownMenuItem
+            key={estado}
+            onClick={() => cambiarEstado(estado)}
+            disabled={actualizando || estado === estadoCompra}
+            className="cursor-pointer"
+          >
+            {estado === estadoCompra && (
+              <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+            )}
+            {estado !== estadoCompra && <div className="w-6" />}
+            <span>{ETIQUETAS_ESTADO_COMPRA[estado]}</span>
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

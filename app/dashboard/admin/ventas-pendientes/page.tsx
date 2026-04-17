@@ -35,30 +35,31 @@ export default async function PaginaVentasPendientes() {
     redirect("/dashboard");
   }
 
-  // Obtener ventas pendientes de entrega (pagadas pero no entregadas)
+  // Obtener ventas pendientes de entrega (pagadas pero no finalizadas)
   const { data: ventasPendientes } = await supabase
     .from("ventas")
     .select(`
       *,
       users(nombre_completo, email, telefono),
-      items_venta(
+      venta_items(
         cantidad,
         precio_unitario,
         productos(nombre, sku)
       )
     `)
-    .in("estado", ["pagado", "preparando"])
+    .eq("estado_pago", "pagado")
+    .neq("estado_compra", "finalizado")
     .order("fecha_compra", { ascending: false });
 
-  // Obtener ventas entregadas/enviadas
+  // Obtener ventas finalizadas/entregadas recientemente
   const { data: ventasEntregadas } = await supabase
     .from("ventas")
     .select(`
       *,
       users(nombre_completo, email, telefono)
     `)
-    .in("estado", ["entregado", "enviado"])
-    .order("fecha_entrega", { ascending: false })
+    .eq("estado_compra", "finalizado")
+    .order("updated_at", { ascending: false })
     .limit(10);
 
   return (
@@ -101,7 +102,7 @@ export default async function PaginaVentasPendientes() {
                       <TableHead>Cliente</TableHead>
                       <TableHead>Fecha</TableHead>
                       <TableHead>Monto</TableHead>
-                      <TableHead>Tipo Entrega</TableHead>
+                      <TableHead>Estado Compra</TableHead>
                       <TableHead>Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -128,24 +129,12 @@ export default async function PaginaVentasPendientes() {
                           {formatARS(venta.total_monto)}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                            {venta.metodo_entrega === "local" ? (
-                              <>
-                                <MapPin className="h-4 w-4 text-orange-500" />
-                                <span className="text-sm">Retirar al local</span>
-                              </>
-                            ) : (
-                              <>
-                                <Truck className="h-4 w-4 text-blue-500" />
-                                <span className="text-sm">Envío</span>
-                              </>
-                            )}
-                          </div>
+                          <span className="text-sm">{venta.estado_compra}</span>
                         </TableCell>
                         <TableCell>
                           <ActualizadorEstadoEntrega
                             ventaId={venta.id}
-                            metodoEntrega={venta.metodo_entrega}
+                            estadoCompra={venta.estado_compra}
                             clienteNombre={(venta.users as any)?.nombre_completo}
                             clienteEmail={(venta.users as any)?.email}
                             clienteTelefono={(venta.users as any)?.telefono}
@@ -207,11 +196,11 @@ export default async function PaginaVentasPendientes() {
                         </TableCell>
                         <TableCell>
                           <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-800">
-                            {venta.estado === "entregado" ? "✓ Entregado" : "📦 Enviado"}
+                            ✓ {venta.estado_compra}
                           </span>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {venta.fecha_entrega ? formatFechaHora(venta.fecha_entrega) : "-"}
+                          {venta.updated_at ? formatFechaHora(venta.updated_at) : "-"}
                         </TableCell>
                       </TableRow>
                     ))}

@@ -78,6 +78,22 @@ export const ETIQUETAS_ESTADO_VENTA = {
   cancelada: "Cancelada",
 } as const;
 
+/** Etiquetas para estado de pago */
+export const ETIQUETAS_ESTADO_PAGO = {
+  pendiente: "Pendiente",
+  pagado: "Pagado",
+  rechazado: "Rechazado",
+} as const;
+
+/** Etiquetas para estado de compra */
+export const ETIQUETAS_ESTADO_COMPRA = {
+  en_proceso: "En proceso",
+  en_preparacion: "En preparación",
+  lista_para_retirar: "Lista para retirar",
+  despachado: "Despachado",
+  finalizado: "Finalizado",
+} as const;
+
 /** Etiquetas para tipo de servicio */
 export const ETIQUETAS_TIPO_SERVICIO = {
   instalacion: "Instalación",

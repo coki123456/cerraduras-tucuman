@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       .eq("id", ventaId)
       .single();
 
-    if (!venta || venta.estado !== "pendiente") {
+    if (!venta || venta.estado_pago !== "pendiente") {
       return NextResponse.json({ ok: true });
     }
 

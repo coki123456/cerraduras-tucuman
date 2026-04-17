@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { InsigniaEstadoVenta } from "@/components/ventas/InsigniaEstadoVenta";
+import { InsigniaEstadoPago } from "@/components/ventas/InsigniaEstadoPago";
+import { InsigniaEstadoCompra } from "@/components/ventas/InsigniaEstadoCompra";
 import { formatARS, formatFechaHora } from "@/lib/utils";
 import { ShoppingBag, Search, Filter, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -75,7 +77,8 @@ export default async function PaginaVentasAdmin() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Monto</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead>Pago</TableHead>
+                  <TableHead>Compra</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -102,7 +105,10 @@ export default async function PaginaVentasAdmin() {
                       {formatARS(venta.total_monto)}
                     </TableCell>
                     <TableCell>
-                      <InsigniaEstadoVenta estado={venta.estado} />
+                      <InsigniaEstadoPago estado={venta.estado_pago} />
+                    </TableCell>
+                    <TableCell>
+                      <InsigniaEstadoCompra estado={venta.estado_compra} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" asChild>

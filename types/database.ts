@@ -141,6 +141,8 @@ export type Database = {
           fecha_compra: string;
           total_monto: number;
           estado: "pendiente" | "confirmada" | "cancelada" | "entregado" | "enviado";
+          estado_pago: "pendiente" | "pagado" | "rechazado";
+          estado_compra: "en_proceso" | "en_preparacion" | "lista_para_retirar" | "despachado" | "finalizado";
           metodo_pago: "mercadopago" | "efectivo";
           mercadopago_payment_id: string | null;
           mercadopago_preference_id: string | null;
@@ -155,6 +157,8 @@ export type Database = {
           fecha_compra?: string;
           total_monto: number;
           estado?: "pendiente" | "confirmada" | "cancelada" | "entregado";
+          estado_pago?: "pendiente" | "pagado" | "rechazado";
+          estado_compra?: "en_proceso" | "en_preparacion" | "lista_para_retirar" | "despachado" | "finalizado";
           metodo_pago?: "mercadopago" | "efectivo";
           mercadopago_payment_id?: string | null;
           mercadopago_preference_id?: string | null;
@@ -165,6 +169,8 @@ export type Database = {
         };
         Update: {
           estado?: "pendiente" | "confirmada" | "cancelada" | "entregado";
+          estado_pago?: "pendiente" | "pagado" | "rechazado";
+          estado_compra?: "en_proceso" | "en_preparacion" | "lista_para_retirar" | "despachado" | "finalizado";
           mercadopago_payment_id?: string | null;
           mercadopago_preference_id?: string | null;
           fecha_entrega?: string | null;
@@ -313,3 +319,5 @@ export type EstadoVisita =
   | "completada"
   | "cancelada";
 export type EstadoVenta = "pendiente" | "confirmada" | "cancelada";
+export type EstadoPago = "pendiente" | "pagado" | "rechazado";
+export type EstadoCompra = "en_proceso" | "en_preparacion" | "lista_para_retirar" | "despachado" | "finalizado";
