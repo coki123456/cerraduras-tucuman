@@ -22,7 +22,17 @@ export default async function PaginaDetalleCompra(
 
   if (!user) redirect("/login");
 
-  const { data: venta } = await supabase
+  // Verificar el rol del usuario
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  const isAdmin = profile?.role === "admin";
+
+  // Query base
+  let query = supabase
     .from("ventas")
     .select(
       `
@@ -33,12 +43,18 @@ export default async function PaginaDetalleCompra(
         precio_unitario,
         subtotal,
         productos(nombre, sku)
-      )
+      ),
+      users(nombre_completo, email, telefono)
     `
     )
-    .eq("id", id)
-    .eq("cliente_id", user.id)
-    .single();
+    .eq("id", id);
+
+  // Si no es admin, solo puede ver sus propias compras
+  if (!isAdmin) {
+    query = query.eq("cliente_id", user.id);
+  }
+
+  const { data: venta } = await query.single();
 
   if (!venta) notFound();
 
@@ -56,11 +72,11 @@ export default async function PaginaDetalleCompra(
     <div className="space-y-5 max-w-2xl">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/compras">
+          <Link href={isAdmin ? "/dashboard/admin/ventas" : "/dashboard/compras"}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div>
+        <div className="flex-1">
           <h2 className="text-lg font-bold">
             Pedido #{venta.id.slice(0, 8).toUpperCase()}
           </h2>
@@ -70,6 +86,30 @@ export default async function PaginaDetalleCompra(
         </div>
         <InsigniaEstadoVenta estado={venta.estado} />
       </div>
+
+      {/* Información del cliente (solo para admins) */}
+      {isAdmin && (
+        <Card className="border-border/50 bg-muted/30">
+          <CardContent className="pt-6">
+            <div className="space-y-2 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Cliente</p>
+                <p className="font-semibold">{(venta.users as any)?.nombre_completo || "Desconocido"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="font-mono text-xs">{(venta.users as any)?.email}</p>
+              </div>
+              {(venta.users as any)?.telefono && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Teléfono</p>
+                  <p className="font-mono">{(venta.users as any)?.telefono}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Items */}
       <Card className="border-border/50">
