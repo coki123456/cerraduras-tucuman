@@ -16,6 +16,7 @@ import {
   User,
   ShoppingBag,
   Settings,
+  Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -144,6 +145,19 @@ export function BarraLateral() {
           );
         })}
       </nav>
+
+      {/* Ver tienda pública (admin / empleado) */}
+      {(role === "admin" || role === "empleado") && (
+        <div className="px-3 pb-2">
+          <Link
+            href="/tienda"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <Store className="h-4 w-4 shrink-0" />
+            Ver tienda
+          </Link>
+        </div>
+      )}
 
       {/* Cerrar sesión */}
       <div className="p-3 border-t border-border/50">
